@@ -10,7 +10,7 @@ func TestGetSQLfromDBRow(t *testing.T) {
 
 	f, err := os.OpenFile("testdata/Test_0.1.item", os.O_RDONLY, 0444)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	root, err := Parse(f)
@@ -19,7 +19,7 @@ func TestGetSQLfromDBRow(t *testing.T) {
 		if node.ComponentName == "tPostgresqlRow" {
 			sql, err := GetSQLfromDBRow(&node)
 			if err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 
 			if sql == "" {
