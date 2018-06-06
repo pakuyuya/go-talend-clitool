@@ -2,7 +2,7 @@
 ## instllation
 
 ```
-$ cd path/to/go-talend-sqlextractor
+$ cd path/to/go-talend-clitool
 
 $ go version
 go version go1.7.4 windows/amd64
