@@ -20,7 +20,7 @@ func GetSQLfromDBRow(node *Node) (string, error) {
 }
 
 func GetSQLfromMap(node *Node) (string, error) {
-	inputs, err := _getInputColumns(node)
+	inputs, err := _getInputTables(node)
 	if err != nil {
 		return "", err
 	}
@@ -33,33 +33,74 @@ func GetSQLfromMap(node *Node) (string, error) {
 	return _buildSQL(inputs, outputs)
 }
 
+type _TableInfo struct {
+	Name     string
+	Alias    string
+	JoinType string
+	Columns  []_ColumnInfo
+}
 type _ColumnInfo struct {
-	Scheme     string
-	TableName  string
-	TableAlias string
+	Table      *_TableInfo
 	Join       bool
-	JoinType   string
 	Expression string
 	Operator   string
 }
 
-func _getInputColumns(node *Node) ([]_ColumnInfo, error) {
-	columns := []_ColumnInfo{}
+func _getInputTables(node *Node) ([]_TableInfo, error) {
+	tables := []_TableInfo{}
 
-	// TODO: implements
+	for _, tagtable := range node.NodeData.InputTables {
+		table := _TableInfo{
+			Name:     tagtable.TableName,
+			Alias:    tagtable.Name,
+			JoinType: tagtable.JoinType,
+		}
 
-	return columns, nil
+		columns := []_ColumnInfo{}
+		for _, tagTableEntry := range tagtable.DBMapperTableEntries {
+			columns = append(columns,
+				_ColumnInfo{
+					Table:      &table,
+					Join:       tagTableEntry.Join,
+					Expression: tagTableEntry.Expression,
+					Operator:   tagTableEntry.Operator,
+				})
+		}
+		table.Columns = columns
+		tables = append(tables, table)
+	}
+
+	return tables, nil
 }
 
-func _getOutputColumns(node *Node) ([]_ColumnInfo, error) {
-	columns := []_ColumnInfo{}
+func _getOutputTables(node *Node) ([]_TableInfo, error) {
+	tables := []_TableInfo{}
 
-	// TODO: implements
+	for _, tagtable := range node.NodeData.OutputTables {
+		table := _TableInfo{
+			Name:     tagtable.TableName,
+			Alias:    tagtable.Name,
+			JoinType: "",
+		}
 
-	return columns, nil
+		columns := []_ColumnInfo{}
+		for _, tagTableEntry := range tagtable.DBMapperTableEntries {
+			columns = append(columns,
+				_ColumnInfo{
+					Table:      &table,
+					Join:       false,
+					Expression: tagTableEntry.Expression,
+					Operator:   "",
+				})
+		}
+		table.Columns = columns
+		tables = append(tables, table)
+	}
+
+	return tables, nil
 }
 
-func _buildSQL(inputs []_ColumnInfo, outputs []_ColumnInfo) (string, error) {
+func _buildSQL(inputs []_TableInfo, outputs []_TableInfo) (string, error) {
 	var b bytes.Buffer
 
 	// TODO: implements
