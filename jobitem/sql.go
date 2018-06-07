@@ -19,18 +19,18 @@ func GetSQLfromDBRow(node *Node) (string, error) {
 	return "", errors.New(`not found <elementparameter name="QUERY" />`)
 }
 
-func GetSQLfromMap(node *Node) (string, error) {
-	inputs, err := _getInputTables(node)
+func GetSQLfromMap(mapNode *Node, outputname string) (string, error) {
+	inputs, err := _getInputTables(mapNode)
 	if err != nil {
 		return "", err
 	}
 
-	outputs, err := _getOutputTables(node)
+	output, err := _getOutputTable(mapNode, outputname)
 	if err != nil {
 		return "", err
 	}
 
-	return _buildSQL(inputs, outputs)
+	return _buildSQL(inputs, output)
 }
 
 type _TableInfo struct {
@@ -73,16 +73,17 @@ func _getInputTables(node *Node) ([]_TableInfo, error) {
 	return tables, nil
 }
 
-func _getOutputTables(node *Node) ([]_TableInfo, error) {
-	tables := []_TableInfo{}
-
+func _getOutputTable(node *Node, outputname string) (*_TableInfo, error) {
 	for _, tagtable := range node.NodeData.OutputTables {
+		if tagtable.Name != outputname {
+			continue
+		}
+
 		table := _TableInfo{
 			Name:     tagtable.TableName,
 			Alias:    tagtable.Name,
 			JoinType: "",
 		}
-
 		columns := []_ColumnInfo{}
 		for _, tagTableEntry := range tagtable.DBMapperTableEntries {
 			columns = append(columns,
@@ -94,13 +95,12 @@ func _getOutputTables(node *Node) ([]_TableInfo, error) {
 				})
 		}
 		table.Columns = columns
-		tables = append(tables, table)
+		return &table, nil
 	}
-
-	return tables, nil
+	return nil, errors.New("not found output `" + outputname + "`")
 }
 
-func _buildSQL(inputs []_TableInfo, outputs []_TableInfo) (string, error) {
+func _buildSQL(inputs []_TableInfo, output *_TableInfo) (string, error) {
 	var b bytes.Buffer
 
 	// TODO: implements
