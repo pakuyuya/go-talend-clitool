@@ -25,7 +25,7 @@ func GetSQLfromMap(node *Node) (string, error) {
 		return "", err
 	}
 
-	outputs, err := _getOutputColumns(node)
+	outputs, err := _getOutputTables(node)
 	if err != nil {
 		return "", err
 	}
