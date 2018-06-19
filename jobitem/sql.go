@@ -31,7 +31,7 @@ func GetSQLfromMap(mapNode *Node, outputname string) (string, error) {
 		return "", err
 	}
 
-	return _buildSQL(inputs, output)
+	return _buildInsertSelectSQL(inputs, output)
 }
 
 type _TableInfo struct {
@@ -47,6 +47,85 @@ type _ColumnInfo struct {
 	Expression string
 	Operator   string
 }
+
+type _SubQueryInfo struct {
+	Inputs []_FromItem
+	Output _TableInfo
+}
+
+type _FromItem interface {
+	FromItem() (tableItem string, alias string)
+}
+
+func (u *_TableInfo) FromItem() (tableItem string, alias string) {
+	tablename := u.Name
+	if (input.Alias != "") {
+		alias := u.Alias
+	} else {
+		alias := stringutils.GetSplitTail(u.Name)
+	}
+	return tablename, alias
+}
+
+func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
+	var b bytes.Buffer
+
+	b.WriteString("(select ")
+
+	inputs := u.Inputs
+	output := u.Output
+
+	firstcol = true
+	for col := range output.Columns {
+		if !firstcol {
+			b.WriteRune(',')
+		}
+		firstcol = false
+		b.WriteString(col.Expression)
+	}
+	
+	b.WriteString(" from ")
+	var firsttable = true
+	for input := range inputs {
+		tableItem, alias := input.FromItem()
+		if (input.JoinType = "NO_JOIN") {
+			if !firsttable {
+				b.WriteRune(',')
+			}
+			b.WriteString(tableItem + " " + alias + " ")
+		} else {
+			// append `join`` phrase
+			b.WriteString(input.JoinType + " " + tableItem + " " + alias)
+
+			// make `on` phrase
+			b.WriteString(" on (")
+			firstcol = true
+			for col := range input.Columns {
+				if (!col.Join) {
+					continue;
+				}
+				if !firstcol {
+					b.WriteString(" and ")
+				}
+				firstcol = false
+				b.WriteString(alias)
+				b.WriteRune('.')
+				b.WriteString(col.Name)
+				b.WriteString(col.Operator)
+				b.WriteString(col.Expression)
+			}
+			b.WriteString(")")
+		}
+		var firsttable = false
+	}
+	
+	b.WriteString(")")
+
+	_, outputAlias = output.FromItem()
+
+	return b.String(), outputAlias
+}
+
 
 func _getInputTables(node *Node) ([]_TableInfo, error) {
 	tables := []_TableInfo{}
@@ -104,8 +183,7 @@ func _getOutputTable(node *Node, outputname string) (*_TableInfo, error) {
 	return nil, errors.New("not found output `" + outputname + "`")
 }
 
-func _buildSQL(inputs []_TableInfo, output *_TableInfo) (string, error) {
-	// TODO: sub query
+func _buildInsertSelectSQL(inputs []_FromItem, output *_TableInfo) (string, error) {
 	// TODO: consider `as` for field
 
 	var b bytes.Buffer
@@ -124,74 +202,10 @@ func _buildSQL(inputs []_TableInfo, output *_TableInfo) (string, error) {
 	}
 	b.WriteString(")")
 
-	// confirm: AS expression
-	b.WriteString(" select ")
-	firstcol = true
-	for col := range output.Columns {
-		if !firstcol {
-			b.WriteRune(',')
-		}
-		firstcol = false
-		b.WriteString(col.Expression)
-	}
-	
-	b.WriteString(" from ")
-	var firsttable = true
-	for input := range inputs {
-		tablename, alias := _GetTableNameAndAlias(input)
-		if (input.JoinType = "NO_JOIN") {
-			if !firsttable {
-				b.WriteRune(',')
-			}
-			b.WriteString(tablename + " " + alias + " ")
-		} else {
-			// append `join`` phrase
-			b.WriteString(input.JoinType + " " + tableaname + " " alias)
+	queryInfo := _SubQueryInfo{inputs, output}
+	selectBody, _ := queryInfo.FromItem()
 
-			// make `on` phrase
-			b.WriteString(" on (")
-			firstcol = true
-			for col := range input.Columns {
-				if (!col.Join) {
-					continue;
-				}
-				if !firstcol {
-					b.WriteString(" and ")
-				}
-				firstcol = false
-				b.WriteString(alias)
-				b.WriteRune('.')
-				b.WriteString(col.Name)
-				b.WriteString(col.Operator)
-				b.WriteString(col.Expression)
-			}
-			b.WriteString(")")
-		}
-		var firsttable = false
-	}
-
-	var bwhere bytes.Buffer
-	firstwhere = true
-	for input := range inputs {
-		_, alias := _GetTableNameAndAlias(input)
-		for col := range input.Columns {
-			if (col.Join) {
-				continue;
-			}
-			if !firstwhere {
-				b.WriteString(" and ")
-			}
-			firstwhere = false
-			bwhere.WriteString(alias)
-			bwhere.WriteRune('.')
-			bwhere.WriteString(col.Name)
-			bwhere.WriteString(col.Operator)
-			bwhere.WriteString(col.Expression)
-		}
-	}
-	if bwhere.Len > 0 {
-		b.write(bwhere.Bytes())
-	}
+	b.WriteString(selectBody[1:len(selectBody)-1])
 
 	return b.String(), nil
 }
