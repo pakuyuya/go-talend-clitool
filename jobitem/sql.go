@@ -4,8 +4,60 @@ import (
 	"bytes"
 	"errors"
 	"strings"
+
 	"../util/stringutils"
 )
+
+/*
+実装方針変換メモ
+
+// 従来目指していたもの
+
+tagStructs := Parse(xml)
+
+sqls := []string{}
+
+for _, node := range tagStructs.Nodes {
+	switch node.ComponentName {
+	case "tPostgresqlRow":
+		sql, err = GetSQLfromDBRow(node)
+	case "tELTPostgresqlMap":
+		// ここらへんが破綻
+		if (OutputIstOutputCompornent(node)) {
+			sql, err = GetSQLfromMap(node)
+		}
+	}
+}
+
+// これから目指すもの
+
+// 新しく作るstruct。とりあえずクエリ作るための情報を保持
+type struct NodeSummary {
+	PrevConns []Connection
+	NextConns []Connection
+	NodeType NodeType
+	Name string
+	JoinTyp ...
+	ConnChainStage int
+	ConnChainSubIndex   int
+}
+
+tagStructs := Parse(xml)
+nodeSummarys := GetNodeSummaries(tagStructs) // ここでConnectionを意味解釈して、処理の前後関係を洗い出す。
+
+sqls := []string{}
+for _, nodeSummary := range nodeSummarys {
+	switch nodeSummary.NodeType {
+	case NodetETLPostgresqlMap:
+		sql, err = GetSQLfromDBRow(nodeSummary)
+	case NodetPostgresqlInputRow:
+		if (IsLastMap(nodeSummary)) {
+			sql, err := GetSQLfromMapReqursive(nodeSummary)
+		}
+	}
+}
+
+*/
 
 // GetSQLfromDBRow is function that extract SQL of DBRow compornent
 func GetSQLfromDBRow(node *Node) (string, error) {
@@ -31,7 +83,12 @@ func GetSQLfromMap(mapNode *Node, outputname string) (string, error) {
 		return "", err
 	}
 
-	return _buildInsertSelectSQL(inputs, output)
+	inputFromItems := make([]_FromItem, len(inputs))
+	for i, input := range inputs {
+		inputFromItems[i] = &input
+	}
+
+	return _buildInsertSelectSQL(inputFromItems, output)
 }
 
 type _TableInfo struct {
@@ -42,7 +99,7 @@ type _TableInfo struct {
 }
 type _ColumnInfo struct {
 	Table      *_TableInfo
-	Name       name
+	Name       string
 	Join       bool
 	Expression string
 	Operator   string
@@ -59,10 +116,10 @@ type _FromItem interface {
 
 func (u *_TableInfo) FromItem() (tableItem string, alias string) {
 	tablename := u.Name
-	if (input.Alias != "") {
+	if u.Alias != "" {
 		alias := u.Alias
 	} else {
-		alias := stringutils.GetSplitTail(u.Name)
+		alias := stringutils.GetSplitTail(u.Name, ".")
 	}
 	return tablename, alias
 }
@@ -75,20 +132,20 @@ func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
 	inputs := u.Inputs
 	output := u.Output
 
-	firstcol = true
-	for col := range output.Columns {
+	var firstcol = true
+	for _, col := range output.Columns {
 		if !firstcol {
 			b.WriteRune(',')
 		}
 		firstcol = false
 		b.WriteString(col.Expression)
 	}
-	
+
 	b.WriteString(" from ")
 	var firsttable = true
-	for input := range inputs {
+	for _, input := range inputs {
 		tableItem, alias := input.FromItem()
-		if (input.JoinType = "NO_JOIN") {
+		if input.JoinType == "NO_JOIN" {
 			if !firsttable {
 				b.WriteRune(',')
 			}
@@ -100,9 +157,9 @@ func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
 			// make `on` phrase
 			b.WriteString(" on (")
 			firstcol = true
-			for col := range input.Columns {
-				if (!col.Join) {
-					continue;
+			for _, col := range input.Columns {
+				if !col.Join {
+					continue
 				}
 				if !firstcol {
 					b.WriteString(" and ")
@@ -118,14 +175,13 @@ func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
 		}
 		var firsttable = false
 	}
-	
+
 	b.WriteString(")")
 
 	_, outputAlias = output.FromItem()
 
 	return b.String(), outputAlias
 }
-
 
 func _getInputTables(node *Node) ([]_TableInfo, error) {
 	tables := []_TableInfo{}
@@ -149,7 +205,7 @@ func _getInputTables(node *Node) ([]_TableInfo, error) {
 				})
 		}
 		table.Columns = columns
-		tables = append(tables, table)
+		tables = append(tables, &table)
 	}
 
 	return tables, nil
@@ -205,14 +261,14 @@ func _buildInsertSelectSQL(inputs []_FromItem, output *_TableInfo) (string, erro
 	queryInfo := _SubQueryInfo{inputs, output}
 	selectBody, _ := queryInfo.FromItem()
 
-	b.WriteString(selectBody[1:len(selectBody)-1])
+	b.WriteString(selectBody[1 : len(selectBody)-1])
 
 	return b.String(), nil
 }
 
 func _GetTableNameAndAlias(table _TableInfo) (string, string) {
 	tablename := table.Name
-	if (input.Alias != "") {
+	if input.Alias != "" {
 		alias := input.Alias
 	} else {
 		alias := stringutils.GetSplitTail(input.Name)

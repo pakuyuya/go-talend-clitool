@@ -4,7 +4,7 @@
     <contextParameter comment="test" name="new1" prompt="qqq" promptNeeded="true" type="id_String" value="x"/>
   </context>
   <parameters>
-    <elementParameter field="TEXT" name="SCREEN_OFFSET_X" value="0" show="false"/>
+    <elementParameter field="TEXT" name="SCREEN_OFFSET_X" value="32" show="false"/>
     <elementParameter field="TEXT" name="SCREEN_OFFSET_Y" value="0" show="false"/>
     <elementParameter field="TEXT" name="REPOSITORY_CONNECTION_ID" value="" show="false"/>
     <elementParameter field="TEXT" name="OOZIE_PROPERTY_TYPENAME" value="" show="false"/>
@@ -234,13 +234,13 @@
       </column>
     </metadata>
     <nodeData xsi:type="DBMapData">
-      <InputTables name="sandbox.customer" tableName="sandbox.customer" joinType="NO_JOIN">
-        <DBMapperTableEntries name="custid" expression="" operator=""/>
-        <DBMapperTableEntries name="custname" operator=""/>
+      <InputTables name="e.customer" tableName="e.customer" joinType="NO_JOIN">
+        <DBMapperTableEntries name="custid"/>
+        <DBMapperTableEntries name="custname"/>
       </InputTables>
-      <InputTables name="sandbox.customer" tableName="sandbox.customer" joinType="INNER_JOIN" alias="c2">
-        <DBMapperTableEntries name="custid" expression="customer.custid" join="true" operator="="/>
-        <DBMapperTableEntries name="custname" expression="" operator=""/>
+      <InputTables name="a" tableName="a" joinType="NO_JOIN">
+        <DBMapperTableEntries name="custid" expression="e.customer.custid" operator="="/>
+        <DBMapperTableEntries name="custname"/>
       </InputTables>
       <OutputTables name="table2" tableName="newOutput1">
         <DBMapperTableEntries name="custid" expression="sandbox.customer.custid "/>
@@ -270,7 +270,7 @@
       </column>
     </metadata>
   </node>
-  <node componentName="tELTPostgresqlInput" componentVersion="0.102" offsetLabelX="0" offsetLabelY="0" posX="224" posY="480">
+  <node componentName="tELTPostgresqlInput" componentVersion="0.102" offsetLabelX="0" offsetLabelY="0" posX="224" posY="576">
     <elementParameter field="TEXT" name="UNIQUE_NAME" value="tELTPostgresqlInput_3" show="false"/>
     <elementParameter field="TECHNICAL" name="SCHEMA:SCHEMA_TYPE" value="REPOSITORY" show="false"/>
     <elementParameter field="TECHNICAL" name="SCHEMA:REPOSITORY_SCHEMA_TYPE" value="_RgmLIEMtEeiQ74Vo3oPNxg - customer" show="false"/>
@@ -280,24 +280,6 @@
     <elementParameter field="TEXT" name="LABEL" value="__ELT_TABLE_NAME__"/>
     <elementParameter field="TEXT" name="CONNECTION_FORMAT" value="row"/>
     <metadata connector="TABLE" label="e.customer" name="table2">
-      <column comment="" key="false" length="10" name="custid" nullable="true" pattern="" precision="0" sourceType="INT4" type="id_Integer" usefulColumn="true">
-        <additionalField key="Comment" value=""/>
-      </column>
-      <column comment="" key="false" length="30" name="custname" nullable="true" pattern="" precision="0" sourceType="VARCHAR" type="id_String" usefulColumn="true">
-        <additionalField key="Comment" value=""/>
-      </column>
-    </metadata>
-  </node>
-  <node componentName="tELTPostgresqlInput" componentVersion="0.102" offsetLabelX="0" offsetLabelY="0" posX="224" posY="576">
-    <elementParameter field="TEXT" name="UNIQUE_NAME" value="tELTPostgresqlInput_4" show="false"/>
-    <elementParameter field="TECHNICAL" name="SCHEMA:SCHEMA_TYPE" value="REPOSITORY" show="false"/>
-    <elementParameter field="TECHNICAL" name="SCHEMA:REPOSITORY_SCHEMA_TYPE" value="_RgmLIEMtEeiQ74Vo3oPNxg - customer" show="false"/>
-    <elementParameter field="TEXT" name="ELT_TABLE_NAME" value="&quot;customer&quot;"/>
-    <elementParameter field="TEXT" name="ELT_SCHEMA_NAME" value="&quot;sandbox&quot;"/>
-    <elementParameter field="MAPPING_TYPE" name="MAPPING" value="postgres_id"/>
-    <elementParameter field="TEXT" name="LABEL" value="__ELT_TABLE_NAME__"/>
-    <elementParameter field="TEXT" name="CONNECTION_FORMAT" value="row"/>
-    <metadata connector="TABLE" label="sandbox.customer" name="table2">
       <column comment="" key="false" length="10" name="custid" nullable="true" pattern="" precision="0" sourceType="INT4" type="id_Integer" usefulColumn="true">
         <additionalField key="Comment" value=""/>
       </column>
@@ -578,6 +560,59 @@
       </column>
     </metadata>
   </node>
+  <node componentName="tELTPostgresqlMap" componentVersion="0.102" offsetLabelX="0" offsetLabelY="0" posX="128" posY="448">
+    <elementParameter field="TEXT" name="UNIQUE_NAME" value="tELTPostgresqlMap_4" show="false"/>
+    <elementParameter field="CHECK" name="USE_EXISTING_CONNECTION" value="true" show="false"/>
+    <elementParameter field="COMPONENT_LIST" name="CONNECTION" value="tDBConnection_1" show="false"/>
+    <elementParameter field="EXTERNAL" name="MAP" value=""/>
+    <elementParameter field="CLOSED_LIST" name="LINK_STYLE" value="AUTO" show="false"/>
+    <elementParameter field="TEXT" name="HOST" value="&quot;&quot;" show="false"/>
+    <elementParameter field="TEXT" name="PORT" value="&quot;1433&quot;" show="false"/>
+    <elementParameter field="TEXT" name="DBNAME" value="&quot;&quot;" show="false"/>
+    <elementParameter field="TEXT" name="USER" value="&quot;&quot;" show="false"/>
+    <elementParameter field="PASSWORD" name="PASS" value="0RMsyjmybrE=" show="false"/>
+    <elementParameter field="ENCODING_TYPE" name="ENCODING" value="&quot;ISO-8859-15&quot;" show="false"/>
+    <elementParameter field="TECHNICAL" name="ENCODING:ENCODING_TYPE" value="ISO-8859-15"/>
+    <elementParameter field="MAPPING_TYPE" name="MAPPING" value="postgres_id" show="false"/>
+    <elementParameter field="IMAGE" name="PREVIEW" value="_DyAUMEMtEeiQ74Vo3oPNxg-tELTPostgresqlMap_4-PREVIEW.bmp"/>
+    <elementParameter field="TEXT" name="PROPERTIES" value="&quot;&quot;" show="false"/>
+    <elementParameter field="TEXT" name="CONNECTION_FORMAT" value="row"/>
+    <metadata connector="TABLE_REF" label="a" name="table5">
+      <column comment="" key="false" length="10" name="custid" nullable="true" pattern="" precision="0" sourceType="INT4" type="id_Integer" usefulColumn="true">
+        <additionalField key="Comment" value=""/>
+      </column>
+      <column comment="" key="false" length="30" name="custname" nullable="true" pattern="" precision="0" sourceType="VARCHAR" type="id_String" usefulColumn="true">
+        <additionalField key="Comment" value=""/>
+      </column>
+    </metadata>
+    <nodeData xsi:type="DBMapData">
+      <InputTables name="customer" tableName="customer" joinType="NO_JOIN">
+        <DBMapperTableEntries name="custid" operator=""/>
+        <DBMapperTableEntries name="custname"/>
+      </InputTables>
+      <OutputTables name="table5" tableName="a">
+        <DBMapperTableEntries name="custid" expression="customer.custid  "/>
+        <DBMapperTableEntries name="custname" expression="customer.custname  "/>
+      </OutputTables>
+    </nodeData>
+  </node>
+  <node componentName="tELTPostgresqlInput" componentVersion="0.102" offsetLabelX="0" offsetLabelY="0" posX="32" posY="384">
+    <elementParameter field="TEXT" name="UNIQUE_NAME" value="tELTPostgresqlInput_10" show="false"/>
+    <elementParameter field="TECHNICAL" name="SCHEMA:SCHEMA_TYPE" value="REPOSITORY" show="false"/>
+    <elementParameter field="TECHNICAL" name="SCHEMA:REPOSITORY_SCHEMA_TYPE" value="_RgmLIEMtEeiQ74Vo3oPNxg - customer" show="false"/>
+    <elementParameter field="TEXT" name="ELT_TABLE_NAME" value="&quot;customer&quot;"/>
+    <elementParameter field="TEXT" name="ELT_SCHEMA_NAME" value="&quot;&quot;"/>
+    <elementParameter field="MAPPING_TYPE" name="MAPPING" value="postgres_id"/>
+    <elementParameter field="TEXT" name="CONNECTION_FORMAT" value="row"/>
+    <metadata connector="TABLE" label="customer" name="table4">
+      <column comment="" key="false" length="10" name="custid" nullable="true" pattern="" precision="0" sourceType="INT4" type="id_Integer" usefulColumn="true">
+        <additionalField key="Comment" value=""/>
+      </column>
+      <column comment="" key="false" length="30" name="custname" nullable="true" pattern="" precision="0" sourceType="VARCHAR" type="id_String" usefulColumn="true">
+        <additionalField key="Comment" value=""/>
+      </column>
+    </metadata>
+  </node>
   <node componentName="tPostgresqlRow" componentVersion="0.102" offsetLabelX="0" offsetLabelY="0" posX="672" posY="224">
     <elementParameter field="TEXT" name="UNIQUE_NAME" value="tDBRow_1" show="false"/>
     <elementParameter field="CHECK" name="USE_EXISTING_CONNECTION" value="true"/>
@@ -664,9 +699,6 @@
   <connection connectorName="TABLE" label="e.customer" lineStyle="9" metaname="table2" offsetLabelX="0" offsetLabelY="0" source="tELTPostgresqlInput_3" target="tELTPostgresqlMap_2">
     <elementParameter field="TEXT" name="UNIQUE_NAME" value="table2" show="false"/>
   </connection>
-  <connection connectorName="TABLE" label="sandbox.customer" lineStyle="9" metaname="table2" offsetLabelX="0" offsetLabelY="0" source="tELTPostgresqlInput_4" target="tELTPostgresqlMap_2">
-    <elementParameter field="TEXT" name="UNIQUE_NAME" value="table2" show="false"/>
-  </connection>
   <connection connectorName="TABLE" label="otuput" lineStyle="9" metaname="table3" offsetLabelX="0" offsetLabelY="0" source="tELTPostgresqlMap_3" target="tELTPostgresqlOutput_3">
     <elementParameter field="TEXT" name="UNIQUE_NAME" value="table3" show="false"/>
   </connection>
@@ -687,6 +719,12 @@
   </connection>
   <connection connectorName="TABLE" label="torder" lineStyle="9" metaname="table3" offsetLabelX="0" offsetLabelY="0" source="tELTPostgresqlInput_5" target="tELTPostgresqlMap_3">
     <elementParameter field="TEXT" name="UNIQUE_NAME" value="table3" show="false"/>
+  </connection>
+  <connection connectorName="TABLE_REF" label="a" lineStyle="22" metaname="table5" offsetLabelX="0" offsetLabelY="0" source="tELTPostgresqlMap_4" target="tELTPostgresqlMap_2">
+    <elementParameter field="TEXT" name="UNIQUE_NAME" value="table5" show="false"/>
+  </connection>
+  <connection connectorName="TABLE" label="customer" lineStyle="9" metaname="table4" offsetLabelX="0" offsetLabelY="0" source="tELTPostgresqlInput_10" target="tELTPostgresqlMap_4">
+    <elementParameter field="TEXT" name="UNIQUE_NAME" value="table4" show="false"/>
   </connection>
   <connection connectorName="SUBJOB_OK" label="OnSubjobOk" lineStyle="1" metaname="tDBConnection_1" offsetLabelX="0" offsetLabelY="0" source="tDBConnection_1" target="tELTPostgresqlMap_1">
     <elementParameter field="TEXT" name="UNIQUE_NAME" value="OnSubjobOk1" show="false"/>
