@@ -107,7 +107,7 @@ type _ColumnInfo struct {
 
 type _SubQueryInfo struct {
 	Inputs []_FromItem
-	Output _TableInfo
+	Output *_TableInfo
 }
 
 type _FromItem interface {
@@ -115,13 +115,13 @@ type _FromItem interface {
 }
 
 func (u *_TableInfo) FromItem() (tableItem string, alias string) {
-	tablename := u.Name
+	tableItem = u.Name
 	if u.Alias != "" {
-		alias := u.Alias
+		alias = u.Alias
 	} else {
-		alias := stringutils.GetSplitTail(u.Name, ".")
+		alias = stringutils.GetSplitTail(u.Name, ".")
 	}
-	return tablename, alias
+	return
 }
 
 func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
@@ -129,7 +129,7 @@ func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
 
 	b.WriteString("(select ")
 
-	inputs := u.Inputs
+	//inputs := u.Inputs
 	output := u.Output
 
 	var firstcol = true
@@ -142,43 +142,44 @@ func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
 	}
 
 	b.WriteString(" from ")
-	var firsttable = true
-	for _, input := range inputs {
-		tableItem, alias := input.FromItem()
-		if input.JoinType == "NO_JOIN" {
-			if !firsttable {
-				b.WriteRune(',')
-			}
-			b.WriteString(tableItem + " " + alias + " ")
-		} else {
-			// append `join`` phrase
-			b.WriteString(input.JoinType + " " + tableItem + " " + alias)
+	// var firsttable = true
+	// for _, input := range inputs {
+	// TODO: rewrite
+	// 	tableItem, alias := input.FromItem()
+	// 	if input.JoinType == "NO_JOIN" {
+	// 		if !firsttable {
+	// 			b.WriteRune(',')
+	// 		}
+	// 		b.WriteString(tableItem + " " + alias + " ")
+	// 	} else {
+	// 		// append `join`` phrase
+	// 		b.WriteString(input.JoinType + " " + tableItem + " " + alias)
 
-			// make `on` phrase
-			b.WriteString(" on (")
-			firstcol = true
-			for _, col := range input.Columns {
-				if !col.Join {
-					continue
-				}
-				if !firstcol {
-					b.WriteString(" and ")
-				}
-				firstcol = false
-				b.WriteString(alias)
-				b.WriteRune('.')
-				b.WriteString(col.Name)
-				b.WriteString(col.Operator)
-				b.WriteString(col.Expression)
-			}
-			b.WriteString(")")
-		}
-		var firsttable = false
-	}
+	// 		// make `on` phrase
+	// 		b.WriteString(" on (")
+	// 		firstcol = true
+	// 		for _, col := range input.Columns {
+	// 			if !col.Join {
+	// 				continue
+	// 			}
+	// 			if !firstcol {
+	// 				b.WriteString(" and ")
+	// 			}
+	// 			firstcol = false
+	// 			b.WriteString(alias)
+	// 			b.WriteRune('.')
+	// 			b.WriteString(col.Name)
+	// 			b.WriteString(col.Operator)
+	// 			b.WriteString(col.Expression)
+	// 		}
+	// 		b.WriteString(")")
+	// 	}
+	// 	var firsttable = false
+	// }
 
-	b.WriteString(")")
+	// b.WriteString(")")
 
-	_, outputAlias = output.FromItem()
+	_, outputAlias := output.FromItem()
 
 	return b.String(), outputAlias
 }
@@ -205,7 +206,7 @@ func _getInputTables(node *Node) ([]_TableInfo, error) {
 				})
 		}
 		table.Columns = columns
-		tables = append(tables, &table)
+		tables = append(tables, table)
 	}
 
 	return tables, nil
@@ -249,7 +250,7 @@ func _buildInsertSelectSQL(inputs []_FromItem, output *_TableInfo) (string, erro
 
 	b.WriteString("(")
 	var firstcol = true
-	for col := range output.Columns {
+	for _, col := range output.Columns {
 		if !firstcol {
 			b.WriteRune(',')
 		}
@@ -268,10 +269,11 @@ func _buildInsertSelectSQL(inputs []_FromItem, output *_TableInfo) (string, erro
 
 func _GetTableNameAndAlias(table _TableInfo) (string, string) {
 	tablename := table.Name
-	if input.Alias != "" {
-		alias := input.Alias
+	var alias string
+	if table.Alias != "" {
+		alias = table.Alias
 	} else {
-		alias := stringutils.GetSplitTail(input.Name)
+		alias = stringutils.GetSplitTail(table.Name, ".")
 	}
 	return tablename, alias
 }
