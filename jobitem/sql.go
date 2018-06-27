@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func TELTOutput2SQL(nodeLink *NodeLinkInfo) (string, error) {
+func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 	if GetComponentType(&nodeLink.Node) != ComponentELTOutput {
 		return "", errors.New(nodeLink.Node.ComponentName + " is not ETLOutput.")
 	}
@@ -17,8 +17,15 @@ func TELTOutput2SQL(nodeLink *NodeLinkInfo) (string, error) {
 	return b.String(), nil
 }
 
-func _tELTMap2SQL(nodeLink *NodeLinkInfo) (string, error) {
+func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo) (string, error) {
 	// TODO: will return SELECT
+	var b bytes.Buffer
+
+	return b.String(), nil
+}
+
+func _tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
+	// TODO: will return from item
 	var b bytes.Buffer
 
 	return b.String(), nil
