@@ -7,14 +7,14 @@ import (
 
 type NodeLinkInfo struct {
 	Node      Node
-	NextNodes []*ConnInfo
-	PrevNodes []*ConnInfo
+	NextConns []*ConnInfo
+	PrevConns []*ConnInfo
 }
 type ConnInfo struct {
 	ConnName string
 	Metaname string
-	From     *NodeLinkInfo
-	To       *NodeLinkInfo
+	Link     *NodeLinkInfo
+	Forward  bool
 }
 
 type ComponentType int
@@ -57,17 +57,18 @@ func GetNodeLinks(talendfile *TalendFile) ([]*NodeLinkInfo, error) {
 		if !tgtExists {
 			continue
 		}
-		connInfo := &ConnInfo{conn.ConnectorName, conn.Metaname, srclink, tgtlink}
-		srclink.NextNodes = append(srclink.NextNodes, connInfo)
-		tgtlink.PrevNodes = append(tgtlink.NextNodes, connInfo)
+		forwardConn := &ConnInfo{conn.ConnectorName, conn.Metaname, tgtlink, true}
+		backwordConn := &ConnInfo{conn.ConnectorName, conn.Metaname, srclink, false}
+		srclink.NextConns = append(srclink.NextConns, forwardConn)
+		tgtlink.PrevConns = append(tgtlink.PrevConns, backwordConn)
 	}
 
 	return links, nil
 }
 
-func FindLink(uniqueName string, pLinks []*NodeLinkInfo) *NodeLinkInfo {
+func FindLink(uniqueName string, pLinks []*ConnInfo) *ConnInfo {
 	for _, p := range pLinks {
-		name, err := GetUniqueName(&p.Node)
+		name, err := GetUniqueName(&p.Link.Node)
 		if err != nil && uniqueName == name {
 			return p
 		}

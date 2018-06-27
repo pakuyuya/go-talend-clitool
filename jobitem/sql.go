@@ -6,18 +6,43 @@ import (
 )
 
 func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
-	if GetComponentType(&nodeLink.Node) != ComponentELTOutput {
-		return "", errors.New(nodeLink.Node.ComponentName + " is not ETLOutput.")
+	pNode := &nodeLink.Node
+
+	if GetComponentType(pNode) != ComponentELTOutput {
+		return "", errors.New(pNode.ComponentName + " is not ETLOutput.")
 	}
 
 	var b bytes.Buffer
 
-	// TODO: will return INSERT SELECT
+	etable := GetElementParameter(pNode, "ELT_TABLE_NAME")
+	eschema := GetElementParameter(pNode, "ELT_SCHEMA_NAME")
+
+	b.WriteString("INSERT INTO ")
+	if eschema != nil {
+		b.WriteString(eschema.Value + ".")
+	}
+	b.WriteString(etable.Value)
+
+	selectQuery := ""
+	for _, pConn := range nodeLink.PrevConns {
+		if GetComponentType(&pConn.Link.Node) == ComponentELTMap {
+			q, err := _tELTMap2SelectSQL(pConn.Link, pConn.Metaname)
+			if err != nil {
+				return "", err
+			}
+			selectQuery = q
+		}
+	}
+
+	if selectQuery == "" {
+		return "", errors.New("This ELTOutput has no input.")
+	}
+	b.WriteString(" " + selectQuery)
 
 	return b.String(), nil
 }
 
-func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo) (string, error) {
+func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error) {
 	// TODO: will return SELECT
 	var b bytes.Buffer
 
