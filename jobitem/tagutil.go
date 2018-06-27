@@ -7,9 +7,28 @@ import (
 
 type NodeLinkInfo struct {
 	Node      Node
-	NextNodes []*NodeLinkInfo
-	PrevNodes []*NodeLinkInfo
+	NextNodes []*ConnInfo
+	PrevNodes []*ConnInfo
 }
+type ConnInfo struct {
+	ConnName string
+	Metaname string
+	From     *NodeLinkInfo
+	To       *NodeLinkInfo
+}
+
+type ComponentType int
+
+const (
+	ComponentUnknown ComponentType = iota + 1
+	ComponentELTMap
+	ComponentELTInput
+	ComponentELTOutput
+	ComponentMap
+	ComponentDBRow
+	ComponentDBOutput
+	ComponentDBInput
+)
 
 func GetNodeLinks(talendfile *TalendFile) ([]*NodeLinkInfo, error) {
 	links := []*NodeLinkInfo{}
@@ -17,7 +36,7 @@ func GetNodeLinks(talendfile *TalendFile) ([]*NodeLinkInfo, error) {
 
 	// listup Node
 	for _, node := range talendfile.Nodes {
-		link := &NodeLinkInfo{node, []*NodeLinkInfo{}, []*NodeLinkInfo{}}
+		link := &NodeLinkInfo{node, []*ConnInfo{}, []*ConnInfo{}}
 		links = append(links, link)
 		pUniqueName := GetElementParameter(&link.Node, "UNIQUE_NAME")
 		if pUniqueName == nil {
@@ -38,11 +57,22 @@ func GetNodeLinks(talendfile *TalendFile) ([]*NodeLinkInfo, error) {
 		if !tgtExists {
 			continue
 		}
-		srclink.NextNodes = append(srclink.NextNodes, tgtlink)
-		tgtlink.PrevNodes = append(tgtlink.NextNodes, srclink)
+		connInfo := &ConnInfo{conn.ConnectorName, conn.Metaname, srclink, tgtlink}
+		srclink.NextNodes = append(srclink.NextNodes, connInfo)
+		tgtlink.PrevNodes = append(tgtlink.NextNodes, connInfo)
 	}
 
 	return links, nil
+}
+
+func FindLink(uniqueName string, pLinks []*NodeLinkInfo) *NodeLinkInfo {
+	for _, p := range pLinks {
+		name, err := GetUniqueName(&p.Node)
+		if err != nil && uniqueName == name {
+			return p
+		}
+	}
+	return nil
 }
 
 func GetElementParameter(node *Node, name string) *ElementParameter {
@@ -53,4 +83,33 @@ func GetElementParameter(node *Node, name string) *ElementParameter {
 		}
 	}
 	return nil
+}
+
+func GetUniqueName(node *Node) (string, error) {
+	eName := GetElementParameter(node, "UNIQUE_NAME")
+	if eName != nil {
+		return eName.Value, nil
+	}
+	return "", errors.New(`not found <elementparameter name="UNIQUE_NAME" />`)
+}
+
+func GetComponentType(node *Node) ComponentType {
+	switch node.ComponentName {
+	case "tELTPostgresqlInput":
+		return ComponentELTInput
+	case "tELTPostgresqlMap":
+		return ComponentELTMap
+	case "tELTPostgresqlOutput":
+		return ComponentELTOutput
+	case "tMap":
+		return ComponentMap
+	case "tPostgresqlRow":
+		return ComponentDBRow
+	case "tPostgresqlInput":
+		return ComponentDBInput
+	case "tTPostgresqlOutput":
+		return ComponentDBOutput
+	default:
+		return ComponentUnknown
+	}
 }

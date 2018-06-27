@@ -3,92 +3,25 @@ package jobitem
 import (
 	"bytes"
 	"errors"
-	"strings"
-
-	"../util/stringutils"
 )
 
-/*
-実装方針変換メモ
-
-// 従来目指していたもの
-
-tagStructs := Parse(xml)
-
-sqls := []string{}
-
-for _, node := range tagStructs.Nodes {
-	switch node.ComponentName {
-	case "tPostgresqlRow":
-		sql, err = GetSQLfromDBRow(node)
-	case "tELTPostgresqlMap":
-		// ここらへんが破綻
-		if (OutputIstOutputCompornent(node)) {
-			sql, err = GetSQLfromMap(node)
-		}
+func TELTOutput2SQL(nodeLink *NodeLinkInfo) (string, error) {
+	if GetComponentType(&nodeLink.Node) != ComponentELTOutput {
+		return "", errors.New(nodeLink.Node.ComponentName + " is not ETLOutput.")
 	}
+
+	var b bytes.Buffer
+
+	// TODO: will return INSERT SELECT
+
+	return b.String(), nil
 }
 
-// これから目指すもの
+func _tELTMap2SQL(nodeLink *NodeLinkInfo) (string, error) {
+	// TODO: will return SELECT
+	var b bytes.Buffer
 
-// 新しく作るstruct。とりあえずクエリ作るための情報を保持
-type struct NodeSummary {
-	PrevConns []Connection
-	NextConns []Connection
-	NodeType NodeType
-	Name string
-	JoinTyp ...
-	ConnChainStage int
-	ConnChainSubIndex   int
-}
-
-tagStructs := Parse(xml)
-nodeSummarys := GetNodeSummaries(tagStructs) // ここでConnectionを意味解釈して、処理の前後関係を洗い出す。
-
-sqls := []string{}
-for _, nodeSummary := range nodeSummarys {
-	switch nodeSummary.NodeType {
-	case NodetETLPostgresqlMap:
-		sql, err = GetSQLfromDBRow(nodeSummary)
-	case NodetPostgresqlInputRow:
-		if (IsLastMap(nodeSummary)) {
-			sql, err := GetSQLfromMapReqursive(nodeSummary)
-		}
-	}
-}
-
-*/
-
-// GetSQLfromDBRow is function that extract SQL of DBRow compornent
-func GetSQLfromDBRow(node *Node) (string, error) {
-	for _, p := range node.ElementParameters {
-		if strings.ToUpper(p.Name) != "QUERY" {
-			continue
-		}
-
-		return p.Value, nil
-	}
-
-	return "", errors.New(`not found <elementparameter name="QUERY" />`)
-}
-
-func GetSQLfromMap(mapNode *Node, outputname string) (string, error) {
-	inputs, err := _getInputTables(mapNode)
-	if err != nil {
-		return "", err
-	}
-
-	output, err := _getOutputTable(mapNode, outputname)
-	if err != nil {
-		return "", err
-	}
-
-	inputFromItems := make([]_FromItem, len(inputs))
-	for i, input := range inputs {
-		inputFromItems[i] = &input
-	}
-
-	return _buildInsertSelectSQL(inputFromItems, output)
+	return b.String(), nil
 }
 
 type _TableInfo struct {
@@ -105,89 +38,10 @@ type _ColumnInfo struct {
 	Operator   string
 }
 
-type _SubQueryInfo struct {
-	Inputs []_FromItem
-	Output *_TableInfo
-}
-
-type _FromItem interface {
-	FromItem() (tableItem string, alias string)
-}
-
-func (u *_TableInfo) FromItem() (tableItem string, alias string) {
-	tableItem = u.Name
-	if u.Alias != "" {
-		alias = u.Alias
-	} else {
-		alias = stringutils.GetSplitTail(u.Name, ".")
-	}
-	return
-}
-
-func (u *_SubQueryInfo) FromItem() (tableItem string, alias string) {
-	var b bytes.Buffer
-
-	b.WriteString("(select ")
-
-	//inputs := u.Inputs
-	output := u.Output
-
-	var firstcol = true
-	for _, col := range output.Columns {
-		if !firstcol {
-			b.WriteRune(',')
-		}
-		firstcol = false
-		b.WriteString(col.Expression)
-	}
-
-	b.WriteString(" from ")
-	// var firsttable = true
-	// for _, input := range inputs {
-	// TODO: rewrite
-	// 	tableItem, alias := input.FromItem()
-	// 	if input.JoinType == "NO_JOIN" {
-	// 		if !firsttable {
-	// 			b.WriteRune(',')
-	// 		}
-	// 		b.WriteString(tableItem + " " + alias + " ")
-	// 	} else {
-	// 		// append `join`` phrase
-	// 		b.WriteString(input.JoinType + " " + tableItem + " " + alias)
-
-	// 		// make `on` phrase
-	// 		b.WriteString(" on (")
-	// 		firstcol = true
-	// 		for _, col := range input.Columns {
-	// 			if !col.Join {
-	// 				continue
-	// 			}
-	// 			if !firstcol {
-	// 				b.WriteString(" and ")
-	// 			}
-	// 			firstcol = false
-	// 			b.WriteString(alias)
-	// 			b.WriteRune('.')
-	// 			b.WriteString(col.Name)
-	// 			b.WriteString(col.Operator)
-	// 			b.WriteString(col.Expression)
-	// 		}
-	// 		b.WriteString(")")
-	// 	}
-	// 	var firsttable = false
-	// }
-
-	// b.WriteString(")")
-
-	_, outputAlias := output.FromItem()
-
-	return b.String(), outputAlias
-}
-
-func _getInputTables(node *Node) ([]_TableInfo, error) {
+func _getInputTables(tmapNode *Node) ([]_TableInfo, error) {
 	tables := []_TableInfo{}
 
-	for _, tagtable := range node.NodeData.InputTables {
+	for _, tagtable := range tmapNode.NodeData.InputTables {
 		table := _TableInfo{
 			Name:     tagtable.TableName,
 			Alias:    tagtable.Name,
@@ -212,8 +66,8 @@ func _getInputTables(node *Node) ([]_TableInfo, error) {
 	return tables, nil
 }
 
-func _getOutputTable(node *Node, outputname string) (*_TableInfo, error) {
-	for _, tagtable := range node.NodeData.OutputTables {
+func _getOutputTable(tmapNode *Node, outputname string) (*_TableInfo, error) {
+	for _, tagtable := range tmapNode.NodeData.OutputTables {
 		if tagtable.Name != outputname {
 			continue
 		}
@@ -237,43 +91,5 @@ func _getOutputTable(node *Node, outputname string) (*_TableInfo, error) {
 		table.Columns = columns
 		return &table, nil
 	}
-	return nil, errors.New("not found output `" + outputname + "`")
-}
-
-func _buildInsertSelectSQL(inputs []_FromItem, output *_TableInfo) (string, error) {
-	// TODO: consider `as` for field
-
-	var b bytes.Buffer
-
-	b.WriteString("insert into ")
-	b.WriteString(output.Name)
-
-	b.WriteString("(")
-	var firstcol = true
-	for _, col := range output.Columns {
-		if !firstcol {
-			b.WriteRune(',')
-		}
-		firstcol = false
-		b.WriteString(col.Name)
-	}
-	b.WriteString(")")
-
-	queryInfo := _SubQueryInfo{inputs, output}
-	selectBody, _ := queryInfo.FromItem()
-
-	b.WriteString(selectBody[1 : len(selectBody)-1])
-
-	return b.String(), nil
-}
-
-func _GetTableNameAndAlias(table _TableInfo) (string, string) {
-	tablename := table.Name
-	var alias string
-	if table.Alias != "" {
-		alias = table.Alias
-	} else {
-		alias = stringutils.GetSplitTail(table.Name, ".")
-	}
-	return tablename, alias
+	return nil, errors.New("table " + outputname + " is not found.")
 }

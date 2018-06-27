@@ -19,16 +19,22 @@ func TestGetNodeLinks(t *testing.T) {
 	for _, link := range links {
 		// TODO: add meaningful test
 
-		fNodeNames := func(nodes []*NodeLinkInfo) []string {
+		fNodeNames := func(conns []*ConnInfo, toForward bool) []string {
 			names := []string{}
-			for _, node := range nodes {
-				names = append(names, GetElementParameter(&node.Node, "UNIQUE_NAME").Value)
+			for _, conn := range conns {
+				var node *Node
+				if toForward {
+					node = &conn.To.Node
+				} else {
+					node = &conn.From.Node
+				}
+				names = append(names, GetElementParameter(node, "UNIQUE_NAME").Value)
 			}
 			return names
 		}
-		pnnames := fNodeNames(link.PrevNodes)
+		pnnames := fNodeNames(link.PrevNodes, false)
 		name := GetElementParameter(&link.Node, "UNIQUE_NAME").Value
-		nnnames := fNodeNames(link.NextNodes)
+		nnnames := fNodeNames(link.NextNodes, true)
 
 		fmt.Printf("[%s] => %s => [%s]\r\n", strings.Join(pnnames, ", "), name, strings.Join(nnnames, ", "))
 	}
