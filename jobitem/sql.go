@@ -46,7 +46,7 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 	// TODO: will return SELECT
 	var b bytes.Buffer
 
-	b.WriteString("(select ")
+	b.WriteString("select ")
 
 	inputs, _ := _getInputTables(&nodeLink.Node)
 	output, _ := _getOutputTable(&nodeLink.Node, outputName)
@@ -114,8 +114,6 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 		}
 		firsttable = false
 	}
-
-	b.WriteString(")")
 	return b.String(), nil
 }
 
