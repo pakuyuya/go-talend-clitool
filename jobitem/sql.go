@@ -46,6 +46,76 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 	// TODO: will return SELECT
 	var b bytes.Buffer
 
+	b.WriteString("(select ")
+
+	inputs, _ := _getInputTables(&nodeLink.Node)
+	output, _ := _getOutputTable(&nodeLink.Node, outputName)
+
+	var firstcol = true
+	for _, col := range output.Columns {
+		if !firstcol {
+			b.WriteRune(',')
+		}
+		firstcol = false
+		b.WriteString(col.Expression)
+	}
+
+	b.WriteString(" from ")
+	var firsttable = true
+	for _, input := range inputs {
+
+		var linkInput *NodeLinkInfo
+		for _, prevConn := range nodeLink.PrevConns {
+			if prevConn.Metaname == input.Name {
+				linkInput = prevConn.Link
+			}
+		}
+		if linkInput == nil {
+			continue
+		}
+
+		componentType := GetComponentType(&linkInput.Node)
+		var fromItem string
+		switch componentType {
+		case ComponentELTInput:
+			fromItem, _ = _tELTInput2FromItemSQL(linkInput)
+		case ComponentELTMap:
+			fromItem, _ = _tELTMap2SelectSQL(linkInput, input.Name)
+		}
+		alias := input.Alias
+
+		if input.JoinType == "NO_JOIN" {
+			if !firsttable {
+				b.WriteRune(',')
+			}
+			b.WriteString(fromItem + " " + alias + " ")
+		} else {
+			// append `join`` phrase
+			b.WriteString(input.JoinType + " " + fromItem + " " + alias)
+
+			// make `on` phrase
+			b.WriteString(" on (")
+			firstcol = true
+			for _, col := range input.Columns {
+				if !col.Join {
+					continue
+				}
+				if !firstcol {
+					b.WriteString(" and ")
+				}
+				firstcol = false
+				b.WriteString(alias)
+				b.WriteRune('.')
+				b.WriteString(col.Name)
+				b.WriteString(col.Operator)
+				b.WriteString(col.Expression)
+			}
+			b.WriteString(")")
+		}
+		firsttable = false
+	}
+
+	b.WriteString(")")
 	return b.String(), nil
 }
 
