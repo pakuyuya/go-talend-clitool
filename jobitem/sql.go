@@ -18,7 +18,8 @@ func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 	eschema := GetElementParameter(pNode, "ELT_SCHEMA_NAME")
 
 	b.WriteString("INSERT INTO ")
-	if eschema != nil {
+
+	if eschema != nil && eschema.Value != "" && eschema.Value != "\"\"" {
 		b.WriteString(eschema.Value + ".")
 	}
 	b.WriteString(etable.Value)
@@ -118,8 +119,15 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 }
 
 func _tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
-	// TODO: will return from item
 	var b bytes.Buffer
+
+	etable := GetElementParameter(&nodeLink.Node, "ELT_TABLE_NAME")
+	eschema := GetElementParameter(&nodeLink.Node, "ELT_SCHEMA_NAME")
+
+	if eschema != nil && eschema.Value != "" && eschema.Value != "\"\"" {
+		b.WriteString(eschema.Value + ".")
+	}
+	b.WriteString(etable.Value)
 
 	return b.String(), nil
 }
