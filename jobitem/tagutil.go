@@ -13,6 +13,7 @@ type NodeLinkInfo struct {
 type ConnInfo struct {
 	ConnName string
 	Metaname string
+	Label    string
 	Link     *NodeLinkInfo
 	Forward  bool
 }
@@ -57,8 +58,8 @@ func GetNodeLinks(talendfile *TalendFile) ([]*NodeLinkInfo, error) {
 		if !tgtExists {
 			continue
 		}
-		forwardConn := &ConnInfo{conn.ConnectorName, conn.Metaname, tgtlink, true}
-		backwordConn := &ConnInfo{conn.ConnectorName, conn.Metaname, srclink, false}
+		forwardConn := &ConnInfo{conn.ConnectorName, conn.Metaname, conn.Label, tgtlink, true}
+		backwordConn := &ConnInfo{conn.ConnectorName, conn.Metaname, conn.Label, srclink, false}
 		srclink.NextConns = append(srclink.NextConns, forwardConn)
 		tgtlink.PrevConns = append(tgtlink.PrevConns, backwordConn)
 	}

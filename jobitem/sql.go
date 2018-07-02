@@ -67,7 +67,7 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 
 		var linkInput *NodeLinkInfo
 		for _, prevConn := range nodeLink.PrevConns {
-			if prevConn.Metaname == input.Name {
+			if prevConn.Label == input.Name {
 				linkInput = prevConn.Link
 			}
 		}

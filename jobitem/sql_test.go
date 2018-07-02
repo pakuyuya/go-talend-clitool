@@ -1,10 +1,31 @@
 package jobitem
 
-// import (
-// 	"fmt"
-// 	"os"
-// 	"testing"
-// )
+import (
+	"fmt"
+	"os"
+	"testing"
+)
+
+func TestTELTOutput2InsertSQL(t *testing.T) {
+
+	f, err := os.OpenFile("testdata/Test_0.1.item", os.O_RDONLY, 0444)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	root, err := Parse(f)
+
+	links, _ := GetNodeLinks(root)
+
+	for _, link := range links {
+		if link.Node.ComponentName == "tELTPostgresqlOutput" {
+			sql, _ := TELTOutput2InsertSQL(link)
+
+			fmt.Println(sql)
+		}
+	}
+
+}
 
 // func TestGetSQLfromDBRow(t *testing.T) {
 
