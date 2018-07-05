@@ -3,6 +3,7 @@ package jobitem
 import (
 	"bytes"
 	"errors"
+	"strings"
 )
 
 func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
@@ -24,10 +25,16 @@ func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 	}
 	b.WriteString(etable.Value)
 
+	cols := make([]string, len(pNode.Metadata.Columns), len(pNode.Metadata.Columns))
+	for i, column := range pNode.Metadata.Columns {
+		cols[i] = column.Name
+	}
+	b.WriteString("(" + strings.Join(cols, ",") + ")")
+
 	selectQuery := ""
 	for _, pConn := range nodeLink.PrevConns {
 		if GetComponentType(&pConn.Link.Node) == ComponentELTMap {
-			q, err := _tELTMap2SelectSQL(pConn.Link, pConn.Metaname)
+			q, err := _tELTMap2SelectSQL(pConn.Link, pConn.Label)
 			if err != nil {
 				return "", err
 			}
@@ -47,7 +54,7 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 	// TODO: will return SELECT
 	var b bytes.Buffer
 
-	b.WriteString("select ")
+	b.WriteString("SELECT ")
 
 	inputs, _ := _getInputTables(&nodeLink.Node)
 	output, _ := _getOutputTable(&nodeLink.Node, outputName)
@@ -55,19 +62,19 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 	var firstcol = true
 	for _, col := range output.Columns {
 		if !firstcol {
-			b.WriteRune(',')
+			b.WriteString(", ")
 		}
 		firstcol = false
-		b.WriteString(col.Expression)
+		b.WriteString(strings.Trim(col.Expression, " "))
 	}
 
-	b.WriteString(" from ")
+	b.WriteString(" FROM ")
 	var firsttable = true
 	for _, input := range inputs {
 
 		var linkInput *NodeLinkInfo
 		for _, prevConn := range nodeLink.PrevConns {
-			if prevConn.Label == input.Name {
+			if prevConn.Label == input.TableName {
 				linkInput = prevConn.Link
 			}
 		}
@@ -81,7 +88,7 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 		case ComponentELTInput:
 			fromItem, _ = _tELTInput2FromItemSQL(linkInput)
 		case ComponentELTMap:
-			fromItem, _ = _tELTMap2SelectSQL(linkInput, input.Name)
+			fromItem, _ = _tELTMap2SelectSQL(linkInput, input.TableName)
 		}
 		alias := input.Alias
 
@@ -91,24 +98,27 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 			}
 			b.WriteString(fromItem + " " + alias + " ")
 		} else {
+
 			// append `join`` phrase
-			b.WriteString(input.JoinType + " " + fromItem + " " + alias)
+			b.WriteString(_joinType2join(input.JoinType) + " " + fromItem + " " + alias)
 
 			// make `on` phrase
-			b.WriteString(" on (")
+			b.WriteString(" ON (")
 			firstcol = true
 			for _, col := range input.Columns {
 				if !col.Join {
 					continue
 				}
 				if !firstcol {
-					b.WriteString(" and ")
+					b.WriteString(" AND ")
 				}
 				firstcol = false
 				b.WriteString(alias)
 				b.WriteRune('.')
 				b.WriteString(col.Name)
+				b.WriteRune(' ')
 				b.WriteString(col.Operator)
+				b.WriteRune(' ')
 				b.WriteString(col.Expression)
 			}
 			b.WriteString(")")
@@ -133,10 +143,10 @@ func _tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
 }
 
 type _TableInfo struct {
-	Name     string
-	Alias    string
-	JoinType string
-	Columns  []_ColumnInfo
+	TableName string
+	Alias     string
+	JoinType  string
+	Columns   []_ColumnInfo
 }
 type _ColumnInfo struct {
 	Table      *_TableInfo
@@ -151,9 +161,9 @@ func _getInputTables(tmapNode *Node) ([]_TableInfo, error) {
 
 	for _, tagtable := range tmapNode.NodeData.InputTables {
 		table := _TableInfo{
-			Name:     tagtable.TableName,
-			Alias:    tagtable.Name,
-			JoinType: tagtable.JoinType,
+			TableName: tagtable.TableName,
+			Alias:     tagtable.Name,
+			JoinType:  tagtable.JoinType,
 		}
 
 		columns := []_ColumnInfo{}
@@ -176,14 +186,14 @@ func _getInputTables(tmapNode *Node) ([]_TableInfo, error) {
 
 func _getOutputTable(tmapNode *Node, outputname string) (*_TableInfo, error) {
 	for _, tagtable := range tmapNode.NodeData.OutputTables {
-		if tagtable.Name != outputname {
+		if tagtable.TableName != outputname {
 			continue
 		}
 
 		table := _TableInfo{
-			Name:     tagtable.TableName,
-			Alias:    tagtable.Name,
-			JoinType: "",
+			TableName: tagtable.TableName,
+			Alias:     tagtable.Name,
+			JoinType:  "",
 		}
 		columns := []_ColumnInfo{}
 		for _, tagTableEntry := range tagtable.DBMapperTableEntries {
@@ -200,4 +210,8 @@ func _getOutputTable(tmapNode *Node, outputname string) (*_TableInfo, error) {
 		return &table, nil
 	}
 	return nil, errors.New("table " + outputname + " is not found.")
+}
+
+func _joinType2join(joinType string) string {
+	return strings.Replace(joinType, "_", " ", -1)
 }

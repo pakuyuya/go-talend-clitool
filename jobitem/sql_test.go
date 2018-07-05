@@ -21,6 +21,8 @@ func TestTELTOutput2InsertSQL(t *testing.T) {
 		if link.Node.ComponentName == "tELTPostgresqlOutput" {
 			sql, _ := TELTOutput2InsertSQL(link)
 
+			euname, _ := GetUniqueName(&link.Node)
+			fmt.Println(euname)
 			fmt.Println(sql)
 		}
 	}
