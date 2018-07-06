@@ -17,7 +17,7 @@ func FindMatchPathes(path string) []string {
 	if filepath.IsAbs(path) || path[0:1] == "/" {
 		var pos int
 		basepath, pos = _fetchToken(path)
-		path = path[pos+1:]
+		path = path[pos:]
 	}
 
 	return _findMatchPaths(basepath, path)
@@ -31,10 +31,10 @@ func _findMatchPaths(basepath, path string) []string {
 	}
 
 	t, i := _fetchToken(path)
-	path = path[i+1:]
+	nextpath := path[i:]
 
 	if t == "**" {
-		return _findMatchPathsRecursive(basepath, path)
+		return _findMatchPathsRecursive(basepath, nextpath)
 	}
 
 	regexptn := strings.Replace(regexp.QuoteMeta(t), "\\*", ".*", -1)
@@ -44,11 +44,12 @@ func _findMatchPaths(basepath, path string) []string {
 	for _, file := range files {
 		childfile := file.Name()
 		if r.MatchString(childfile) {
-			if file.IsDir() {
-				rets = append(rets, _findMatchPaths(basepath+"/"+file.Name(), path)...)
-			} else {
-				rets = append(rets, basepath+"/"+file.Name())
+			if nextpath == "" {
+				rets = append(rets, basepath+file.Name())
+			} else if file.IsDir() {
+				rets = append(rets, _findMatchPaths(basepath+file.Name(), nextpath)...)
 			}
+
 		}
 	}
 	return rets
@@ -59,8 +60,8 @@ func _findMatchPathsRecursive(basepath, path string) []string {
 		return []string{}
 	}
 	if path == "**" {
-		path, _ = _fetchToken(path)
-		return _findMatchPathsRecursive(basepath, path)
+		_, i := _fetchToken(path)
+		return _findMatchPathsRecursive(basepath, path[i:])
 	}
 
 	rets := []string{}
@@ -74,7 +75,7 @@ func _findMatchPathsRecursive(basepath, path string) []string {
 		childfile := file.Name()
 		if r.MatchString(childfile) {
 			if file.IsDir() {
-				rets = append(rets, _findMatchPaths(basepath+"/"+file.Name(), path[i+1:])...)
+				rets = append(rets, _findMatchPaths(basepath+"/"+file.Name(), path[i:])...)
 			} else {
 				rets = append(rets, basepath+"/"+file.Name())
 			}
@@ -89,7 +90,10 @@ func _findMatchPathsRecursive(basepath, path string) []string {
 }
 
 func _fetchToken(path string) (string, int) {
-	pos := _min(strings.Index(path, "/"), len(path))
+	pos := _min(strings.Index(path, "/")+1, len(path))
+	if pos <= 0 {
+		pos = len(path)
+	}
 	return path[0:pos], pos
 }
 

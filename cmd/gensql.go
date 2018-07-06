@@ -27,6 +27,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.AddCommand(gensqlCmd)
 
+	gensqlCmd.Flags().StringVarP(&o.Source, "source", "s", "", "必須。対象のファイルパス。")
+	gensqlCmd.Flags().StringVarP(&o.Source, "source", "s", "", "必須。対象のファイルパスです。")
 	gensqlCmd.Flags().StringVarP(&o.Source, "source", "s", "", "必須。対象のファイルパスです。")
 }
 
