@@ -85,10 +85,9 @@ func _findMatchPathsRecursive(basepath, path string) []string {
 			} else {
 				rets = append(rets, basepath+"/"+file.Name())
 			}
-		} else {
-			if file.IsDir() {
-				rets = append(rets, _findMatchPathsRecursive(basepath+"/"+childfile, path)...)
-			}
+		}
+		if file.IsDir() {
+			rets = append(rets, _findMatchPathsRecursive(basepath+"/"+childfile, path)...)
 		}
 	}
 
