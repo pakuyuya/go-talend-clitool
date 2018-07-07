@@ -33,8 +33,14 @@ func _findMatchPaths(basepath, path string) []string {
 	t, i := _fetchToken(path)
 	nextpath := path[i:]
 
+	if t[len(t)-1:] == "/" {
+		t = t[0 : len(t)-1]
+	}
+
 	if t == "**" {
 		return _findMatchPathsRecursive(basepath, nextpath)
+	} else if t == "." || t == ".." {
+		return _findMatchPaths(basepath+"/"+t, nextpath)
 	}
 
 	regexptn := strings.Replace(regexp.QuoteMeta(t), "\\*", ".*", -1)
