@@ -44,3 +44,12 @@ func Csv(entry SqlEntry, w io.Writer, options ...TextOption) error {
 
 	return err
 }
+
+func CsvAry(entries []SqlEntry, w io.Writer, options ...TextOption) error {
+	for _, entry := range entries {
+		if err := Csv(entry, w, options...); err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -14,6 +14,7 @@ type _Options struct {
 	Source string
 	Output string
 	Format string
+	//	Bundle bool // not implemented
 }
 
 var (
@@ -49,6 +50,7 @@ func runapp() {
 		fmt.Println("no file matched path like `%s`", o.Source)
 	}
 
+	jobs := make([]*jobitemInfo, 0, 0)
 	for _, path := range paths {
 		s, err := os.Stat(path)
 		if err != nil {
@@ -59,27 +61,41 @@ func runapp() {
 			continue
 		}
 
-		fp, err := os.OpenFile(path, os.O_RDONLY, 0444)
+		job, err := parseJobitemFile(path)
 		if err != nil {
-			fmt.Println("path `%s` cannot open. [Reason] %s", path, err.Error())
+			fmt.Println(err.Error())
 			continue
 		}
 
-		// validate as .item file
-		talendFile, err := jobitem.Parse(fp)
-
-		if err != nil {
-			fmt.Println("failed to parse `%s` as XML. [Reason] %s", path, err.Error())
-			continue
-		}
-
-		if talendFile.DefaultContext == "" || talendFile.JobType == "" {
-			fmt.Println("XML file `%s` is invalid format as talend job file.", path)
-			continue
-		}
-
-		// TODO: select output
+		jobs = append(jobs, job)
 	}
+
+}
+
+type jobitemInfo struct {
+	FilePath string
+	XMLElem  *jobitem.TalendFile
+}
+
+func parseJobitemFile(path string) (*jobitemInfo, error) {
+
+	fp, err := os.OpenFile(path, os.O_RDONLY, 0444)
+	if err != nil {
+		return nil, fmt.Errorf("path `%s` cannot open. [Reason] %s", path, err.Error())
+	}
+
+	talendFile, err := jobitem.Parse(fp)
+	fp.Close()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse `%s` as XML. [Reason] %s", path, err.Error())
+	}
+
+	if talendFile.DefaultContext == "" || talendFile.JobType == "" {
+		return nil, fmt.Errorf("XML file `%s` is invalid format as talend job file.", path)
+	}
+
+	return &jobitemInfo{path, talendFile}, nil
 }
 
 func validateOptions() bool {
