@@ -20,11 +20,16 @@ type _Options struct {
 	Tag1   string
 	Tag2   string
 	Tag3   string
-	//	Bundle bool // not implemented
+	Bundle bool
 }
 
 var (
 	o = &_Options{}
+)
+
+const (
+	JSON string = "json"
+	CSV  string = "csv"
 )
 
 var gensqlCmd = &cobra.Command{
@@ -42,9 +47,10 @@ func init() {
 	gensqlCmd.Flags().StringVarP(&o.Source, "source", "s", "", "必須。解析対象のファイルパス。（例：project/path/**/*.item")
 	gensqlCmd.Flags().StringVarP(&o.Output, "output", "o", "{source}.{ext}", "出力ファイル名。（デフォルト：解析したファイル名.拡張子")
 	gensqlCmd.Flags().StringVarP(&o.Format, "format", "f", "json", "出力するファイルのフォーマット。")
-	gensqlCmd.Flags().StringVarP(&o.Format, "tag1", "", "{source}", "出力ファイルのTag1に設定する内容のテンプレート")
-	gensqlCmd.Flags().StringVarP(&o.Format, "tag2", "", "{uniquename}", "出力ファイルのTag2に設定する内容のテンプレート")
-	gensqlCmd.Flags().StringVarP(&o.Format, "tag3", "", "", "出力ファイルのTag3に設定する内容のテンプレート")
+	gensqlCmd.Flags().StringVarP(&o.Tag1, "tag1", "", "{source}", "出力ファイルのTag1に設定する内容のテンプレート")
+	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{uniquename}", "出力ファイルのTag2に設定する内容のテンプレート")
+	gensqlCmd.Flags().StringVarP(&o.Tag3, "tag3", "", "", "出力ファイルのTag3に設定する内容のテンプレート")
+	gensqlCmd.Flags().BoolVarP(&o.Bundle, "bundle", "b", false, "出力ファイルを1つに固めます。")
 
 	gensqlCmd.MarkFlagRequired("source")
 }
@@ -79,6 +85,10 @@ func runapp() {
 		jobs = append(jobs, job)
 	}
 
+	if o.Bundle {
+	} else {
+
+	}
 }
 
 type jobitemInfo struct {
@@ -169,10 +179,68 @@ func fmtInContext(fmt string, ctx fmtContext) string {
 func validateOptions() bool {
 	isvalid := true
 
-	if stringutils.EqualsAny(o.Format, "json", "csv") {
+	if stringutils.EqualsAny(o.Format, JSON, CSV) {
 		fmt.Println("output format `%s` is not supported.", o.Format)
 		isvalid = false
 	}
 
 	return isvalid
+}
+
+func writeBundle(jobs []*jobitemInfo) error {
+
+	bundledFilename := fmtInContext(o.Output, fmtContext{"bundle", "all"})
+	fp, err := os.OpenFile(bundledFilename, os.O_WRONLY, 0666)
+
+	if err != nil {
+		return fmt.Errorf("try write to %s, but access denied. reason:%s", bundledFilename, err.Error())
+	}
+
+	entries := make([]*sqlserialize.SqlEntry, 0, 0)
+	for _, job := range jobs {
+		es, _ := getGensqlEntries(job.FilePath, job.XMLElem)
+		entries = append(entries, es...)
+	}
+
+	switch o.Format {
+	case JSON:
+		err = sqlserialize.JsonAry(entries, fp)
+	case CSV:
+		err = sqlserialize.CsvAry(entries, fp)
+	}
+	fp.Close()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeEach(jobs []*jobitemInfo) error {
+	for _, job := range jobs {
+		entries, _ := getGensqlEntries(job.FilePath, job.XMLElem)
+
+		basename := fileutils.Basename(job.FilePath)
+		ext := filepath.Ext(job.FilePath)
+
+		bundledFilename := fmtInContext(o.Output, fmtContext{basename, ext})
+		fp, err := os.OpenFile(bundledFilename, os.O_WRONLY, 0666)
+
+		if err != nil {
+			// error, but continue routien
+			fmt.Println("try write to %s, but access denied. reason:%s", bundledFilename, err.Error())
+			continue
+		}
+
+		switch o.Format {
+		case JSON:
+			err = sqlserialize.JsonAry(entries, fp)
+		case CSV:
+			err = sqlserialize.CsvAry(entries, fp)
+		}
+		fp.Close()
+	}
+
+	return nil
 }

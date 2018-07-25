@@ -8,6 +8,20 @@ import (
 	"strings"
 )
 
+func Basename(path string) string {
+	fname := filepath.Base(path)
+	ext := filepath.Ext(path)
+
+	var i int
+	if ext != "" {
+		i = len(fname) - len(ext)
+	} else {
+		i = len(fname)
+	}
+
+	return fname[0:i]
+}
+
 func FindMatchPathes(path string) []string {
 	if os.PathSeparator != '/' {
 		path = strings.Replace(path, "\\", "/", -1)

@@ -23,7 +23,7 @@ func WithApplyFunc(f func(string) string) TextOption {
 	}
 }
 
-func Csv(entry SqlEntry, w io.Writer, options ...TextOption) error {
+func Csv(entry *SqlEntry, w io.Writer, options ...TextOption) error {
 	opt := textOption{
 		RowFormat: "\"@Tag1@_@Tag2@_@Tag3@\",\"@Sql@\"",
 		ApplyFunc: func(s string) string { return s },
@@ -45,7 +45,7 @@ func Csv(entry SqlEntry, w io.Writer, options ...TextOption) error {
 	return err
 }
 
-func CsvAry(entries []SqlEntry, w io.Writer, options ...TextOption) error {
+func CsvAry(entries []*SqlEntry, w io.Writer, options ...TextOption) error {
 	for _, entry := range entries {
 		if err := Csv(entry, w, options...); err != nil {
 			return err
