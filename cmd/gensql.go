@@ -14,13 +14,14 @@ import (
 )
 
 type _Options struct {
-	Target string
-	Output string
-	Format string
-	Tag1   string
-	Tag2   string
-	Tag3   string
-	Bundle bool
+	Target        string
+	OutDir        string
+	OutFileformat string
+	Format        string
+	Tag1          string
+	Tag2          string
+	Tag3          string
+	Bundle        bool
 }
 
 var (
@@ -45,7 +46,8 @@ func init() {
 	RootCmd.AddCommand(gensqlCmd)
 
 	gensqlCmd.Flags().StringVarP(&o.Target, "target", "t", "", "必須。解析対象のファイルパス。（例：project/path/**/*.item")
-	gensqlCmd.Flags().StringVarP(&o.Output, "output", "o", "{target}.{ext}", "出力ファイル名。（デフォルト：解析したファイル名.拡張子")
+	gensqlCmd.Flags().StringVarP(&o.OutDir, "outdir", "o", "./", "出力ディレクトリ。")
+	gensqlCmd.Flags().StringVarP(&o.OutFileformat, "outname", "", "{target}.{ext}", "出力ファイル名。（デフォルト：解析したファイル名.拡張子")
 	gensqlCmd.Flags().StringVarP(&o.Format, "format", "f", "json", "出力するファイルのフォーマット。")
 	gensqlCmd.Flags().StringVarP(&o.Tag1, "tag1", "", "{target}", "出力ファイルのTag1に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{component}", "出力ファイルのTag2に設定する内容のテンプレート")
@@ -60,7 +62,8 @@ func runapp() {
 	}
 
 	o.Target = filepath.Clean(o.Target)
-	o.Output = filepath.Clean(o.Output)
+	o.OutDir = filepath.Clean(o.OutDir)
+	o.OutFileformat = filepath.Clean(o.OutFileformat)
 
 	paths := fileutils.FindMatchPathes(o.Target)
 
@@ -191,12 +194,16 @@ func validateOptions() bool {
 	return isvalid
 }
 
+func outpathTpl() string {
+	return strings.Trim(o.OutDir, "/\\") + "/" + strings.Trim(o.OutFileformat, "/\\")
+}
+
 func writeBundle(jobs []*jobitemInfo) error {
 
 	basename := "bundle"
 	ext := o.Format
 
-	filename := fmtInContext(o.Output, fmtContext{basename, ext})
+	filename := fmtInContext(outpathTpl(), fmtContext{basename, ext})
 	fp, err := os.Create(filename)
 
 	if err != nil {
@@ -231,7 +238,7 @@ func writeEach(jobs []*jobitemInfo) error {
 		basename := filepath.Base(job.FilePath)
 		ext := o.Format
 
-		filename := fmtInContext(o.Output, fmtContext{basename + "." + ext, ""})
+		filename := fmtInContext(outpathTpl(), fmtContext{basename + "." + ext, ""})
 		fp, err := os.Create(filename)
 
 		if err != nil {
