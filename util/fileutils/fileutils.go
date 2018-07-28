@@ -65,9 +65,9 @@ func _findMatchPaths(basepath, path string) []string {
 		childfile := file.Name()
 		if r.MatchString(childfile) {
 			if nextpath == "" {
-				rets = append(rets, basepath+file.Name())
+				rets = append(rets, basepath+"/"+file.Name())
 			} else if file.IsDir() {
-				rets = append(rets, _findMatchPaths(basepath+file.Name(), nextpath)...)
+				rets = append(rets, _findMatchPaths(basepath+"/"+file.Name(), nextpath)...)
 			}
 
 		}

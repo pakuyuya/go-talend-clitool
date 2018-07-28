@@ -14,7 +14,7 @@ import (
 )
 
 type _Options struct {
-	Source string
+	Target string
 	Output string
 	Format string
 	Tag1   string
@@ -44,32 +44,35 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.AddCommand(gensqlCmd)
 
-	gensqlCmd.Flags().StringVarP(&o.Source, "source", "s", "", "必須。解析対象のファイルパス。（例：project/path/**/*.item")
-	gensqlCmd.Flags().StringVarP(&o.Output, "output", "o", "{source}.{ext}", "出力ファイル名。（デフォルト：解析したファイル名.拡張子")
+	gensqlCmd.Flags().StringVarP(&o.Target, "target", "t", "", "必須。解析対象のファイルパス。（例：project/path/**/*.item")
+	gensqlCmd.Flags().StringVarP(&o.Output, "output", "o", "{target}.{ext}", "出力ファイル名。（デフォルト：解析したファイル名.拡張子")
 	gensqlCmd.Flags().StringVarP(&o.Format, "format", "f", "json", "出力するファイルのフォーマット。")
-	gensqlCmd.Flags().StringVarP(&o.Tag1, "tag1", "", "{source}", "出力ファイルのTag1に設定する内容のテンプレート")
-	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{uniquename}", "出力ファイルのTag2に設定する内容のテンプレート")
+	gensqlCmd.Flags().StringVarP(&o.Tag1, "tag1", "", "{target}", "出力ファイルのTag1に設定する内容のテンプレート")
+	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{component}", "出力ファイルのTag2に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag3, "tag3", "", "", "出力ファイルのTag3に設定する内容のテンプレート")
 	gensqlCmd.Flags().BoolVarP(&o.Bundle, "bundle", "b", false, "出力ファイルを1つに固めます。")
 
-	gensqlCmd.MarkFlagRequired("source")
+	gensqlCmd.MarkFlagRequired("target")
 }
 func runapp() {
 	if !validateOptions() {
 		return
 	}
 
-	paths := fileutils.FindMatchPathes(o.Source)
+	o.Target = filepath.Clean(o.Target)
+	o.Output = filepath.Clean(o.Output)
+
+	paths := fileutils.FindMatchPathes(o.Target)
 
 	if len(paths) == 0 {
-		fmt.Println("no file matched path like `%s`", o.Source)
+		fmt.Println("no file matched path like ", o.Target)
 	}
 
 	jobs := make([]*jobitemInfo, 0, 0)
 	for _, path := range paths {
 		s, err := os.Stat(path)
 		if err != nil {
-			fmt.Println("%s is invalid file path.", path)
+			fmt.Println(path, "is invalid file path.")
 			continue
 		}
 		if s.IsDir() {
@@ -86,8 +89,9 @@ func runapp() {
 	}
 
 	if o.Bundle {
+		writeBundle(jobs)
 	} else {
-
+		writeEach(jobs)
 	}
 }
 
@@ -110,7 +114,7 @@ func parseJobitemFile(path string) (*jobitemInfo, error) {
 	}
 
 	if talendFile.DefaultContext == "" || talendFile.JobType == "" {
-		return nil, fmt.Errorf("XML file `%s` is invalid format as talend job file.", path)
+		return nil, fmt.Errorf("XML file %s is invalid format as talend job file.", path)
 	}
 
 	return &jobitemInfo{path, talendFile}, nil
@@ -170,17 +174,17 @@ func fmtInContext(fmt string, ctx fmtContext) string {
 		ext = ""
 	}
 
-	s := strings.Replace(fmt, "{source}", fname, -1)
-	s = strings.Replace(fmt, "{ext}", ext, -1)
-	s = strings.Replace(fmt, "{component}", ctx.Component, -1)
+	s := strings.Replace(fmt, "{target}", fname, -1)
+	s = strings.Replace(s, "{ext}", ext, -1)
+	s = strings.Replace(s, "{component}", ctx.Component, -1)
 	return s
 }
 
 func validateOptions() bool {
 	isvalid := true
 
-	if stringutils.EqualsAny(o.Format, JSON, CSV) {
-		fmt.Println("output format `%s` is not supported.", o.Format)
+	if !stringutils.EqualsAny(o.Format, JSON, CSV) {
+		fmt.Println("output format", o.Format, "is not supported.")
 		isvalid = false
 	}
 
@@ -189,11 +193,14 @@ func validateOptions() bool {
 
 func writeBundle(jobs []*jobitemInfo) error {
 
-	bundledFilename := fmtInContext(o.Output, fmtContext{"bundle", "all"})
-	fp, err := os.OpenFile(bundledFilename, os.O_WRONLY, 0666)
+	basename := "bundle"
+	ext := o.Format
+
+	filename := fmtInContext(o.Output, fmtContext{basename, ext})
+	fp, err := os.Create(filename)
 
 	if err != nil {
-		return fmt.Errorf("try write to %s, but access denied. reason:%s", bundledFilename, err.Error())
+		return fmt.Errorf("try write to %s, but access denied. [reason]%s", filename, err.Error())
 	}
 
 	entries := make([]*sqlserialize.SqlEntry, 0, 0)
@@ -221,15 +228,15 @@ func writeEach(jobs []*jobitemInfo) error {
 	for _, job := range jobs {
 		entries, _ := getGensqlEntries(job.FilePath, job.XMLElem)
 
-		basename := fileutils.Basename(job.FilePath)
-		ext := filepath.Ext(job.FilePath)
+		basename := filepath.Base(job.FilePath)
+		ext := o.Format
 
-		bundledFilename := fmtInContext(o.Output, fmtContext{basename, ext})
-		fp, err := os.OpenFile(bundledFilename, os.O_WRONLY, 0666)
+		filename := fmtInContext(o.Output, fmtContext{basename + "." + ext, ""})
+		fp, err := os.Create(filename)
 
 		if err != nil {
 			// error, but continue routien
-			fmt.Println("try write to %s, but access denied. reason:%s", bundledFilename, err.Error())
+			fmt.Println("try write to ", filename, " but access denied. reason:", err.Error())
 			continue
 		}
 

@@ -5,7 +5,7 @@ type TalendFile struct {
 	ElementParameters  []ElementParameter  `xml:"parameters>elementParameter"`
 	RoutinesParameters []RoutinesParameter `xml:"parameters>routinesParameter"`
 	DefaultContext     string              `xml:"defaultContext,attr"`
-	JobType            string              `xml:"jobtype,attr"`
+	JobType            string              `xml:"jobType,attr"`
 	Nodes              []Node              `xml:"node"`
 	Connections        []Connection        `xml:"connection"`
 	Subjobs            []Subjob            `xml:"subjob"`
