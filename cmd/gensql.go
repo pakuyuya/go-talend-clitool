@@ -143,6 +143,8 @@ func getGensqlEntries(path string, talendFile *jobitem.TalendFile) ([]*sqlserial
 			sql, _ = jobitem.TELTOutput2InsertSQL(l)
 		case jobitem.ComponentDBRow:
 			sql, _ = jobitem.DBRow2SQL(l)
+		case jobitem.ComponentDBInput:
+			sql, _ = jobitem.DBInput2SQL(l)
 		default:
 			continue
 		}

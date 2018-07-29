@@ -16,6 +16,16 @@ func DBRow2SQL(nodeLink *NodeLinkInfo) (string, error) {
 	return e.Value, nil
 }
 
+func DBInput2SQL(nodeLink *NodeLinkInfo) (string, error) {
+	e := GetElementParameter(&nodeLink.Node, "QUERY")
+
+	if e == nil {
+		return "", errors.New(`not found <elementparameter name="QUERY" />`)
+	}
+
+	return e.Value, nil
+}
+
 func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 	pNode := &nodeLink.Node
 
