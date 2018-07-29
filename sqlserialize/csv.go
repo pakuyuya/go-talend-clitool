@@ -1,6 +1,7 @@
 package sqlserialize
 
 import (
+	"fmt"
 	"io"
 	"strings"
 )
@@ -8,6 +9,7 @@ import (
 type textOption struct {
 	RowFormat string
 	ApplyFunc func(string) string
+	LineBreak string
 }
 
 type TextOption func(*textOption)
@@ -23,10 +25,21 @@ func WithApplyFunc(f func(string) string) TextOption {
 	}
 }
 
+func WithLineBreak(s string) TextOption {
+	return func(opt *textOption) {
+		opt.LineBreak = s
+	}
+}
+
 func Csv(entry *SqlEntry, w io.Writer, options ...TextOption) error {
 	opt := textOption{
 		RowFormat: "\"@Tag1@_@Tag2@_@Tag3@\",\"@Sql@\"",
-		ApplyFunc: func(s string) string { return s },
+		ApplyFunc: func(s string) string {
+			s = strings.Replace(s, "\\", "\\\\", -1)
+			s = strings.Replace(s, "\"", "\"\"", -1)
+			return s
+		},
+		LineBreak: fmt.Sprintln(""),
 	}
 
 	for _, o := range options {
@@ -40,7 +53,7 @@ func Csv(entry *SqlEntry, w io.Writer, options ...TextOption) error {
 	row = strings.Replace(row, "@Tag3@", opt.ApplyFunc(entry.Tag3), -1)
 	row = strings.Replace(row, "@Sql@", opt.ApplyFunc(entry.Sql), -1)
 
-	_, err := w.Write([]byte(row))
+	_, err := w.Write([]byte(row + opt.LineBreak))
 
 	return err
 }

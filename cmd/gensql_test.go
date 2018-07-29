@@ -2,8 +2,11 @@ package cmd
 
 import "testing"
 
-func TestBasic(t *testing.T) {
+func TestJson(t *testing.T) {
 	kick([]string{"gensql", "-t", "testdata/*", "-o", "testresult", "-f", "json"})
+}
+func TestCsv(t *testing.T) {
+	kick([]string{"gensql", "-t", "testdata/*", "-o", "testresult", "-f", "csv"})
 }
 
 func kick(args []string) {

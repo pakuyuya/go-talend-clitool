@@ -22,6 +22,7 @@ type _Options struct {
 	Tag2          string
 	Tag3          string
 	Bundle        bool
+	CsvFormat     string
 }
 
 var (
@@ -53,6 +54,7 @@ func init() {
 	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{component}", "出力ファイルのTag2に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag3, "tag3", "", "", "出力ファイルのTag3に設定する内容のテンプレート")
 	gensqlCmd.Flags().BoolVarP(&o.Bundle, "bundle", "b", false, "出力ファイルを1つに固めます。")
+	gensqlCmd.Flags().StringVarP(&o.CsvFormat, "csvformat", "", `"@Tag1@_@Tag2@_@Tag3@","@Sql@"`, "CSVの出力フォーマットを指定します。（デフォルト："+`"@Tag1@_@Tag2@_@Tag3@","@Sql@"`+"）")
 
 	gensqlCmd.MarkFlagRequired("target")
 }
@@ -251,7 +253,7 @@ func writeEach(jobs []*jobitemInfo) error {
 		case JSON:
 			err = sqlserialize.JsonAry(entries, fp)
 		case CSV:
-			err = sqlserialize.CsvAry(entries, fp)
+			err = sqlserialize.CsvAry(entries, fp, sqlserialize.WithRowFormat(o.CsvFormat))
 		}
 		fp.Close()
 	}
