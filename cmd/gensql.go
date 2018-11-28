@@ -46,15 +46,15 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.AddCommand(gensqlCmd)
 
-	gensqlCmd.Flags().StringVarP(&o.Target, "target", "t", "", "必須。解析対象のファイルパス。（例：project/path/**/*.item")
-	gensqlCmd.Flags().StringVarP(&o.OutDir, "outdir", "o", "./", "出力ディレクトリ。")
-	gensqlCmd.Flags().StringVarP(&o.OutFileformat, "outname", "", "{target}.{ext}", "出力ファイル名。（デフォルト：解析したファイル名.拡張子")
-	gensqlCmd.Flags().StringVarP(&o.Format, "format", "f", "json", "出力するファイルのフォーマット。")
+	gensqlCmd.Flags().StringVarP(&o.Target, "target", "t", "", "必須。解析対象のファイルパス（例：project/path/**/*.item）")
+	gensqlCmd.Flags().StringVarP(&o.OutDir, "outdir", "o", "./", "出力ディレクトリ")
+	gensqlCmd.Flags().StringVarP(&o.OutFileformat, "outname", "", "{target}.{ext}", "出力ファイル名")
+	gensqlCmd.Flags().StringVarP(&o.Format, "format", "f", "json", "出力するファイルのフォーマット")
 	gensqlCmd.Flags().StringVarP(&o.Tag1, "tag1", "", "{target}", "出力ファイルのTag1に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{component}", "出力ファイルのTag2に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag3, "tag3", "", "", "出力ファイルのTag3に設定する内容のテンプレート")
-	gensqlCmd.Flags().BoolVarP(&o.Bundle, "bundle", "b", false, "出力ファイルを1つに固めます。")
-	gensqlCmd.Flags().StringVarP(&o.CsvFormat, "csvformat", "", `"@Tag1@_@Tag2@_@Tag3@","@Sql@"`, "CSVの出力フォーマットを指定します。（デフォルト："+`"@Tag1@_@Tag2@_@Tag3@","@Sql@"`+"）")
+	gensqlCmd.Flags().BoolVarP(&o.Bundle, "bundle", "b", false, "出力ファイルを1つに固めます")
+	gensqlCmd.Flags().StringVarP(&o.CsvFormat, "csvformat", "", `"@Tag1@_@Tag2@_@Tag3@","@Sql@"`, "CSVの出力フォーマットを指定します")
 
 	gensqlCmd.MarkFlagRequired("target")
 }
