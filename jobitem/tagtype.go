@@ -49,6 +49,7 @@ type OutputTables struct {
 	Name                 string                 `xml:"name,attr"`
 	TableName            string                 `xml:"tableName,attr"`
 	DBMapperTableEntries []DBMapperTableEntries `xml:"DBMapperTableEntries"`
+	FilterEntries        []FilterEntries        `xml:"FilterEntries"`
 }
 
 type DBMapperTableEntries struct {
@@ -56,6 +57,11 @@ type DBMapperTableEntries struct {
 	Expression string `xml:"expression,attr"`
 	Join       bool   `xml:"join,attr"`
 	Operator   string `xml:"operator,attr"`
+}
+
+type FilterEntries struct {
+	Name string `xml:"name,attr"`
+	Expression string `xml:"expression,attr"`
 }
 
 type Metadata struct {

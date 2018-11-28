@@ -143,8 +143,16 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 			}
 			b.WriteString(")")
 		}
+
 		firsttable = false
 	}
+
+	if len(output.Filters) > 0 {
+		b.WriteString(" WHERE (")
+		b.WriteString(strings.Join(output.Filters, ") AND ("))
+		b.WriteString(")")
+	}
+
 	return b.String(), nil
 }
 
@@ -167,6 +175,7 @@ type _TableInfo struct {
 	Alias     string
 	JoinType  string
 	Columns   []_ColumnInfo
+	Filters   []string
 }
 type _ColumnInfo struct {
 	Table      *_TableInfo
@@ -199,6 +208,8 @@ func _getInputTables(tmapNode *Node) ([]_TableInfo, error) {
 		}
 		table.Columns = columns
 		tables = append(tables, table)
+
+		table.Filters = make([]string, 0)
 	}
 
 	return tables, nil
@@ -227,6 +238,13 @@ func _getOutputTable(tmapNode *Node, outputname string) (*_TableInfo, error) {
 				})
 		}
 		table.Columns = columns
+
+		filters := make([]string, 0)
+		for _, filter := range tagtable.FilterEntries {
+			filters = append(filters, filter.Expression)
+		}
+		table.Filters = filters
+
 		return &table, nil
 	}
 	return nil, errors.New("table " + outputname + " is not found.")
