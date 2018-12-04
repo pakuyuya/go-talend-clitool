@@ -21,7 +21,7 @@ type _Options struct {
 	Tag1          string
 	Tag2          string
 	Tag3          string
-	Bundle        bool
+	BundleTo      string
 	CsvFormat     string
 }
 
@@ -53,7 +53,7 @@ func init() {
 	gensqlCmd.Flags().StringVarP(&o.Tag1, "tag1", "", "{target}", "出力ファイルのTag1に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{component}", "出力ファイルのTag2に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag3, "tag3", "", "", "出力ファイルのTag3に設定する内容のテンプレート")
-	gensqlCmd.Flags().BoolVarP(&o.Bundle, "bundle", "b", false, "出力ファイルを1つに固めます。")
+	gensqlCmd.Flags().StringVarP(&o.BundleTo, "bundleto", "b", "", "出力ファイルを1つに固め、指定したファイル名に出力します")
 	gensqlCmd.Flags().StringVarP(&o.CsvFormat, "csvformat", "", `"@Tag1@_@Tag2@_@Tag3@","@Sql@"`, "CSVの出力フォーマットを指定します。（デフォルト："+`"@Tag1@_@Tag2@_@Tag3@","@Sql@"`+"）")
 
 	gensqlCmd.MarkFlagRequired("target")
@@ -93,7 +93,7 @@ func runapp() {
 		jobs = append(jobs, job)
 	}
 
-	if o.Bundle {
+	if o.BundleTo != "" {
 		writeBundle(jobs)
 	} else {
 		writeEach(jobs)
@@ -198,16 +198,15 @@ func validateOptions() bool {
 	return isvalid
 }
 
+func outpathBase() string {
+	return strings.Trim(o.OutDir, "/\\")
+}
 func outpathTpl() string {
-	return strings.Trim(o.OutDir, "/\\") + "/" + strings.Trim(o.OutFileformat, "/\\")
+	return outpathBase() + "/" + strings.Trim(o.OutFileformat, "/\\")
 }
 
 func writeBundle(jobs []*jobitemInfo) error {
-
-	basename := "bundle"
-	ext := o.Format
-
-	filename := fmtInContext(outpathTpl(), fmtContext{basename, ext})
+	filename := outpathBase() + "/" + o.BundleTo
 	fp, err := os.Create(filename)
 
 	if err != nil {
