@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"../jobitem"
+	"../jobitem/job2sql"
 	"../sqlserialize"
 	"../util/fileutils"
 	"../util/stringutils"
@@ -140,11 +141,11 @@ func getGensqlEntries(path string, talendFile *jobitem.TalendFile) ([]*sqlserial
 		sql := ""
 		switch t {
 		case jobitem.ComponentELTOutput:
-			sql, _ = jobitem.TELTOutput2InsertSQL(l)
+			sql, _ = job2sql.TELTOutput2InsertSQL(l)
 		case jobitem.ComponentDBRow:
-			sql, _ = jobitem.DBRow2SQL(l)
+			sql, _ = job2sql.DBRow2SQL(l)
 		case jobitem.ComponentDBInput:
-			sql, _ = jobitem.DBInput2SQL(l)
+			sql, _ = job2sql.DBInput2SQL(l)
 		default:
 			continue
 		}

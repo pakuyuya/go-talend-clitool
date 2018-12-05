@@ -1,9 +1,11 @@
-package jobitem
+package job2sql
 
 import (
 	"bytes"
 	"errors"
 	"strings"
+
+	. "../../jobitem"
 )
 
 // DBRow2SQL is function that convert DBRow compornet as xml to sql string. require NodeLinkInfo that generate by GetNodeLinks()

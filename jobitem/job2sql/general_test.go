@@ -1,4 +1,4 @@
-package jobitem
+package job2sql
 
 import (
 	"fmt"
