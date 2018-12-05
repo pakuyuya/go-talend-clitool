@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// DBRow2SQL is function that convert DBRow compornet as xml to sql string. require NodeLinkInfo that generate by GetNodeLinks()
 func DBRow2SQL(nodeLink *NodeLinkInfo) (string, error) {
 	e := GetElementParameter(&nodeLink.Node, "QUERY")
 
@@ -16,6 +17,7 @@ func DBRow2SQL(nodeLink *NodeLinkInfo) (string, error) {
 	return e.Value, nil
 }
 
+// DBInput2SQL is function that convert DBInput compornent as xml to sql string. require NodeLinkInfo that generate by GetNodeLinks()
 func DBInput2SQL(nodeLink *NodeLinkInfo) (string, error) {
 	e := GetElementParameter(&nodeLink.Node, "QUERY")
 
@@ -26,6 +28,7 @@ func DBInput2SQL(nodeLink *NodeLinkInfo) (string, error) {
 	return e.Value, nil
 }
 
+// TELTOutput2InsertSQL is function that convert EltOutput as xml and chained components to sql string. require NodeLinkInfo that generate by GetNodeLinks()
 func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 	pNode := &nodeLink.Node
 
@@ -54,7 +57,7 @@ func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 	selectQuery := ""
 	for _, pConn := range nodeLink.PrevConns {
 		if GetComponentType(&pConn.Link.Node) == ComponentELTMap {
-			q, err := _tELTMap2SelectSQL(pConn.Link, pConn.Label)
+			q, err := ELTMap2SelectSQL(pConn.Link, pConn.Label)
 			if err != nil {
 				return "", err
 			}
@@ -70,14 +73,14 @@ func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 	return b.String(), nil
 }
 
-func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error) {
+func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error) {
 	// TODO: will return SELECT
 	var b bytes.Buffer
 
 	b.WriteString("SELECT ")
 
-	inputs, _ := _getInputTables(&nodeLink.Node)
-	output, _ := _getOutputTable(&nodeLink.Node, outputName)
+	inputs, _ := getInputTables(&nodeLink.Node)
+	output, _ := getOutputTable(&nodeLink.Node, outputName)
 
 	var firstcol = true
 	for _, col := range output.Columns {
@@ -106,9 +109,9 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 		var fromItem string
 		switch componentType {
 		case ComponentELTInput:
-			fromItem, _ = _tELTInput2FromItemSQL(linkInput)
+			fromItem, _ = tELTInput2FromItemSQL(linkInput)
 		case ComponentELTMap:
-			fromItem, _ = _tELTMap2SelectSQL(linkInput, input.TableName)
+			fromItem, _ = ELTMap2SelectSQL(linkInput, input.TableName)
 		}
 		alias := input.Alias
 
@@ -120,7 +123,7 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 		} else {
 
 			// append `join`` phrase
-			b.WriteString(_joinType2join(input.JoinType) + " " + fromItem + " " + alias)
+			b.WriteString(joinType2join(input.JoinType) + " " + fromItem + " " + alias)
 
 			// make `on` phrase
 			b.WriteString(" ON (")
@@ -156,7 +159,7 @@ func _tELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, erro
 	return b.String(), nil
 }
 
-func _tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
+func tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
 	var b bytes.Buffer
 
 	etable := GetElementParameter(&nodeLink.Node, "ELT_TABLE_NAME")
@@ -170,35 +173,35 @@ func _tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
 	return b.String(), nil
 }
 
-type _TableInfo struct {
+type TableInfo struct {
 	TableName string
 	Alias     string
 	JoinType  string
-	Columns   []_ColumnInfo
+	Columns   []ColumnInfo
 	Filters   []string
 }
-type _ColumnInfo struct {
-	Table      *_TableInfo
+type ColumnInfo struct {
+	Table      *TableInfo
 	Name       string
 	Join       bool
 	Expression string
 	Operator   string
 }
 
-func _getInputTables(tmapNode *Node) ([]_TableInfo, error) {
-	tables := []_TableInfo{}
+func getInputTables(tmapNode *Node) ([]TableInfo, error) {
+	tables := []TableInfo{}
 
 	for _, tagtable := range tmapNode.NodeData.InputTables {
-		table := _TableInfo{
+		table := TableInfo{
 			TableName: tagtable.TableName,
 			Alias:     tagtable.Name,
 			JoinType:  tagtable.JoinType,
 		}
 
-		columns := []_ColumnInfo{}
+		columns := []ColumnInfo{}
 		for _, tagTableEntry := range tagtable.DBMapperTableEntries {
 			columns = append(columns,
-				_ColumnInfo{
+				ColumnInfo{
 					Table:      &table,
 					Name:       tagTableEntry.Name,
 					Join:       tagTableEntry.Join,
@@ -215,21 +218,21 @@ func _getInputTables(tmapNode *Node) ([]_TableInfo, error) {
 	return tables, nil
 }
 
-func _getOutputTable(tmapNode *Node, outputname string) (*_TableInfo, error) {
+func getOutputTable(tmapNode *Node, outputname string) (*TableInfo, error) {
 	for _, tagtable := range tmapNode.NodeData.OutputTables {
 		if tagtable.TableName != outputname {
 			continue
 		}
 
-		table := _TableInfo{
+		table := TableInfo{
 			TableName: tagtable.TableName,
 			Alias:     tagtable.Name,
 			JoinType:  "",
 		}
-		columns := []_ColumnInfo{}
+		columns := []ColumnInfo{}
 		for _, tagTableEntry := range tagtable.DBMapperTableEntries {
 			columns = append(columns,
-				_ColumnInfo{
+				ColumnInfo{
 					Table:      &table,
 					Name:       tagTableEntry.Name,
 					Join:       false,
@@ -250,6 +253,6 @@ func _getOutputTable(tmapNode *Node, outputname string) (*_TableInfo, error) {
 	return nil, errors.New("table " + outputname + " is not found.")
 }
 
-func _joinType2join(joinType string) string {
+func joinType2join(joinType string) string {
 	return strings.Replace(joinType, "_", " ", -1)
 }
