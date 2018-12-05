@@ -99,17 +99,41 @@ func GetComponentType(node *Node) ComponentType {
 	switch node.ComponentName {
 	case "tELTPostgresqlInput":
 		return ComponentELTInput
+	case "tELTMysqlInput":
+		return ComponentELTInput
+	case "tELTOracleInput":
+		return ComponentELTInput
 	case "tELTPostgresqlMap":
 		return ComponentELTMap
+	case "tELTMysqlMap":
+		return ComponentELTMap
+	case "tELTOracleMap":
+		return ComponentELTMap
 	case "tELTPostgresqlOutput":
+		return ComponentELTOutput
+	case "tELTMysqlOutput":
+		return ComponentELTOutput
+	case "tELTOracleOutput":
 		return ComponentELTOutput
 	case "tMap":
 		return ComponentMap
 	case "tPostgresqlRow":
 		return ComponentDBRow
+	case "tMysqlRow":
+		return ComponentDBRow
+	case "tOracleRow":
+		return ComponentDBRow
 	case "tPostgresqlInput":
 		return ComponentDBInput
-	case "tTPostgresqlOutput":
+	case "tMysqlInput":
+		return ComponentDBInput
+	case "tOracleInput":
+		return ComponentDBInput
+	case "tPostgresqlOutput":
+		return ComponentDBOutput
+	case "tMysqlOutput":
+		return ComponentDBOutput
+	case "tOracleOutput":
 		return ComponentDBOutput
 	default:
 		return ComponentUnknown

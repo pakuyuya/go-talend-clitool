@@ -60,7 +60,7 @@ type DBMapperTableEntries struct {
 }
 
 type FilterEntries struct {
-	Name string `xml:"name,attr"`
+	Name       string `xml:"name,attr"`
 	Expression string `xml:"expression,attr"`
 }
 
