@@ -1,0 +1,5 @@
+"Test_2_tELTPostgresqlOutput_1_","INSERT INTO ""customer""(custid,custname) SELECT customer.custid, customer2.custname FROM ""customer"" customer INNER JOIN ""customer"" customer2 ON (customer2.custid = customer.custid)"
+"Test_2_tELTPostgresqlOutput_2_","INSERT INTO ""customer""(custid,custname) SELECT sandbox.customer.custid, c2.custname FROM ""sandbox"".""customer"" e.customer ,(SELECT customer.custid, customer.custname FROM ""customer"" customer ) a  WHERE (a.custid = e.customer.custid)"
+"Test_2_tELTPostgresqlOutput_3_","INSERT INTO ""torder""(ordid,orddt,custid,empid,create_at,update_at) SELECT q1.ordid, q2.orddt, a3.custid, a4.empid, a5.create_at, a5.update_at FROM ""torder"" q1 LEFT OUTER JOIN ""torder"" q2 ON (q2.ordid = q1.ordid)RIGHT OUTER JOIN ""torder"" a3 ON (a3.ordid IN (q1.ordid, q1.ordid))FULL OUTER JOIN ""torder"" a4 ON (a4.ordid = q1.ordid)CROSS JOIN ""torder"" a5 ON (a5.ordid = q1.ordid)"
+"Test_2_tDBRow_1_","""select id, name from employee"""
+"Test_2_tDBInput_1_","""select id, name from employee"""

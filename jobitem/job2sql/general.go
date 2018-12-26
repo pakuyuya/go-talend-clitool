@@ -117,6 +117,7 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 			fromItem, _ = tELTInput2FromItemSQL(linkInput)
 		case ComponentELTMap:
 			fromItem, _ = ELTMap2SelectSQL(linkInput, input.TableName)
+			fromItem = "(" + fromItem + ")"
 		}
 		alias := input.Alias
 
