@@ -3,7 +3,6 @@ package job2sql
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"strings"
 
 	. "../../jobitem"
@@ -160,7 +159,6 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 	}
 
 	whereConds = append(whereConds, output.Filters...)
-	fmt.Print(whereConds)
 
 	if len(whereConds) > 0 {
 		b.WriteString(" WHERE (")
