@@ -3,6 +3,7 @@ package job2sql
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 
 	. "../../jobitem"
@@ -78,6 +79,7 @@ func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
 func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error) {
 	// TODO: will return SELECT
 	var b bytes.Buffer
+	whereConds := make([]string, 0, 0)
 
 	b.WriteString("SELECT ")
 
@@ -94,6 +96,7 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 	}
 
 	b.WriteString(" FROM ")
+
 	var firsttable = true
 	for _, input := range inputs {
 
@@ -123,13 +126,12 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 			}
 			b.WriteString(fromItem + " " + alias + " ")
 		} else {
-
 			// append `join`` phrase
 			b.WriteString(joinType2join(input.JoinType) + " " + fromItem + " " + alias)
 
 			// make `on` phrase
 			b.WriteString(" ON (")
-			firstcol = true
+			firstcol := true
 			for _, col := range input.Columns {
 				if !col.Join {
 					continue
@@ -138,27 +140,43 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 					b.WriteString(" AND ")
 				}
 				firstcol = false
-				b.WriteString(alias)
-				b.WriteRune('.')
-				b.WriteString(col.Name)
-				b.WriteRune(' ')
-				b.WriteString(col.Operator)
-				b.WriteRune(' ')
-				b.WriteString(col.Expression)
+				b.WriteString(col2cond(alias, &col))
 			}
 			b.WriteString(")")
+		}
+		// collect `where` phrase
+		for _, col := range input.Columns {
+			if col.Join {
+				continue
+			}
+			if col.Operator == "" {
+				continue
+			}
+			whereConds = append(whereConds, col2cond(alias, &col))
 		}
 
 		firsttable = false
 	}
 
-	if len(output.Filters) > 0 {
+	whereConds = append(whereConds, output.Filters...)
+	fmt.Print(whereConds)
+
+	if len(whereConds) > 0 {
 		b.WriteString(" WHERE (")
-		b.WriteString(strings.Join(output.Filters, ") AND ("))
+		b.WriteString(strings.Join(whereConds, ") AND ("))
 		b.WriteString(")")
 	}
 
 	return b.String(), nil
+}
+
+func col2cond(alias string, col *ColumnInfo) string {
+	return alias + "." + col.Name + " " + col.Operator + " " + col.Expression
+}
+func cols2joinCond(alias string, cols []ColumnInfo) string {
+	var b bytes.Buffer
+
+	return b.String()
 }
 
 func tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
