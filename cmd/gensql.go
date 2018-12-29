@@ -224,7 +224,7 @@ func writeBundle(jobs []*jobitemInfo) error {
 	case JSON:
 		err = sqlserialize.JsonAry(entries, fp)
 	case CSV:
-		err = sqlserialize.CsvAry(entries, fp)
+		err = sqlserialize.CsvAry(entries, fp, sqlserialize.WithRowFormat(o.CsvFormat))
 	}
 	fp.Close()
 
