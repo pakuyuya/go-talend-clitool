@@ -24,6 +24,7 @@ type _Options struct {
 	Tag3          string
 	BundleTo      string
 	CsvFormat     string
+	NoJavaCode    bool
 }
 
 var (
@@ -55,7 +56,8 @@ func init() {
 	gensqlCmd.Flags().StringVarP(&o.Tag2, "tag2", "", "{component}", "出力ファイルのTag2に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.Tag3, "tag3", "", "", "出力ファイルのTag3に設定する内容のテンプレート")
 	gensqlCmd.Flags().StringVarP(&o.BundleTo, "bundleto", "b", "", "出力ファイルを1つに固め、指定したファイル名に出力します")
-	gensqlCmd.Flags().StringVarP(&o.CsvFormat, "csvformat", "", `"@Tag1@_@Tag2@_@Tag3@","@Sql@"`, "CSVの出力フォーマットを指定します。（デフォルト："+`"@Tag1@_@Tag2@_@Tag3@","@Sql@"`+"）")
+	gensqlCmd.Flags().StringVarP(&o.CsvFormat, "csvformat", "", `"@Tag1@_@Tag2@_@Tag3@","@Sql@"`, "CSVの出力フォーマットを指定します")
+	gensqlCmd.Flags().BoolVarP(&o.NoJavaCode, "nojavacode", "", false, "DBRowComponent中のJavaコードを無効にします")
 
 	gensqlCmd.MarkFlagRequired("target")
 }
@@ -135,17 +137,20 @@ func getGensqlEntries(path string, talendFile *jobitem.TalendFile) ([]*sqlserial
 		return nil, err
 	}
 
+	opt := job2sql.Option{}
+	opt.NoJavaCode = o.NoJavaCode
+
 	for _, l := range links {
 		t := jobitem.GetComponentType(&l.Node)
 
 		sql := ""
 		switch t {
 		case jobitem.ComponentELTOutput:
-			sql, _ = job2sql.TELTOutput2InsertSQL(l)
+			sql, _ = job2sql.TELTOutput2InsertSQL(l, &opt)
 		case jobitem.ComponentDBRow:
-			sql, _ = job2sql.DBRow2SQL(l)
+			sql, _ = job2sql.DBRow2SQL(l, &opt)
 		case jobitem.ComponentDBInput:
-			sql, _ = job2sql.DBInput2SQL(l)
+			sql, _ = job2sql.DBInput2SQL(l, &opt)
 		default:
 			continue
 		}

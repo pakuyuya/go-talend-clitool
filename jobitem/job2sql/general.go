@@ -8,30 +8,47 @@ import (
 	. "../../jobitem"
 )
 
+type Option struct {
+	NoJavaCode bool
+}
+
 // DBRow2SQL is function that convert DBRow compornet as xml to sql string. require NodeLinkInfo that generate by GetNodeLinks()
-func DBRow2SQL(nodeLink *NodeLinkInfo) (string, error) {
+func DBRow2SQL(nodeLink *NodeLinkInfo, opt *Option) (string, error) {
 	e := GetElementParameter(&nodeLink.Node, "QUERY")
 
 	if e == nil {
 		return "", errors.New(`not found <elementparameter name="QUERY" />`)
 	}
 
-	return e.Value, nil
+	s := e.Value
+	if opt.NoJavaCode {
+		s = escapeJavaCode(s)
+	}
+
+	return s, nil
 }
 
 // DBInput2SQL is function that convert DBInput compornent as xml to sql string. require NodeLinkInfo that generate by GetNodeLinks()
-func DBInput2SQL(nodeLink *NodeLinkInfo) (string, error) {
+func DBInput2SQL(nodeLink *NodeLinkInfo, opt *Option) (string, error) {
 	e := GetElementParameter(&nodeLink.Node, "QUERY")
 
-	if e == nil {
-		return "", errors.New(`not found <elementparameter name="QUERY" />`)
+	s := e.Value
+	if opt.NoJavaCode {
+		s = escapeJavaCode(s)
 	}
 
-	return e.Value, nil
+	return s, nil
+}
+
+func escapeJavaCode(s string) string {
+	s = strings.TrimSpace(s)
+
+	// TODO
+	return s
 }
 
 // TELTOutput2InsertSQL is function that convert EltOutput as xml and chained components to sql string. require NodeLinkInfo that generate by GetNodeLinks()
-func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo) (string, error) {
+func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo, opt *Option) (string, error) {
 	pNode := &nodeLink.Node
 
 	if GetComponentType(pNode) != ComponentELTOutput {
