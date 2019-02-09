@@ -1,4 +1,4 @@
-package javautils
+package javacodeutils
 
 import (
 	"errors"

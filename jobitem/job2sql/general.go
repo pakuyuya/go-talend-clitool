@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	. "../../jobitem"
+	. "../../util/javacodeutils"
 )
 
 type Option struct {
@@ -41,10 +42,58 @@ func DBInput2SQL(nodeLink *NodeLinkInfo, opt *Option) (string, error) {
 }
 
 func escapeJavaCode(s string) string {
-	s = strings.TrimSpace(s)
+	ss := strings.TrimSpace(s)
+	sret := ""
 
-	// TODO
-	return s
+	const (
+		None          = 0
+		BlockComment  = 1
+		RowComment    = 2
+		StringLiteral = 3
+	)
+
+MAIN_LOOP:
+	for len(ss) > 0 {
+		ibc := strings.Index(ss, "/*")
+		irc := strings.Index(ss, "//")
+		isl := strings.Index(ss, "\"")
+
+		idx := len(ss)
+		nearst := None
+		if ibc >= 0 {
+			idx = ibc
+			nearst = BlockComment
+		}
+		if irc >= 0 && irc < idx {
+			idx = ibc
+			nearst = RowComment
+		}
+		if isl >= 0 && isl < idx {
+			idx = ibc
+			nearst = StringLiteral
+		}
+
+		switch nearst {
+		case None:
+			sret = sret + ss
+			ss = ""
+			break MAIN_LOOP
+		case BlockComment:
+			part, _ := javacodeutils.ReadBlockComment(ss)
+			sret = sret + part
+			ss = ss[len(part):]
+		case RowComment:
+			part, _ := javacodeutils.ReadBlockComment(ss)
+			sret = sret + part
+			ss = ss[len(part):]
+		case StringLiteral:
+			part, _ := javacodeutils.ReadBlockComment(ss)
+			sret = sret + "/*" + part*"*/"
+			ss = ss[len(part):]
+		}
+	}
+
+	return sret
 }
 
 // TELTOutput2InsertSQL is function that convert EltOutput as xml and chained components to sql string. require NodeLinkInfo that generate by GetNodeLinks()
