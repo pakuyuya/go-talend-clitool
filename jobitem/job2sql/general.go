@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	. "../../jobitem"
-	. "../../util/javacodeutils"
+	javacodeutils "../../util/javacodeutils"
 )
 
 type Option struct {
@@ -65,31 +65,47 @@ MAIN_LOOP:
 			nearst = BlockComment
 		}
 		if irc >= 0 && irc < idx {
-			idx = ibc
+			idx = irc
 			nearst = RowComment
 		}
 		if isl >= 0 && isl < idx {
-			idx = ibc
+			idx = isl
 			nearst = StringLiteral
 		}
 
 		switch nearst {
 		case None:
-			sret = sret + ss
+			sret = sret + "/* " + ss + " */"
 			ss = ""
 			break MAIN_LOOP
 		case BlockComment:
-			part, _ := javacodeutils.ReadBlockComment(ss)
+			if idx > 0 {
+				sret = sret + "/* " + ss[0:idx] + "*/"
+			}
+			part, _ := javacodeutils.ReadBlockComment(ss[idx:])
 			sret = sret + part
-			ss = ss[len(part):]
+			ss = ss[idx+len(part):]
 		case RowComment:
-			part, _ := javacodeutils.ReadBlockComment(ss)
+			if idx > 0 {
+				sret = sret + "/* " + ss[0:idx] + "*/"
+			}
+			part, _ := javacodeutils.ReadRowComment(ss[idx:], javacodeutils.LinefeedFlgWin)
 			sret = sret + part
-			ss = ss[len(part):]
+			ss = ss[idx+len(part):]
 		case StringLiteral:
-			part, _ := javacodeutils.ReadBlockComment(ss)
-			sret = sret + "/*" + part*"*/"
-			ss = ss[len(part):]
+			if idx > 0 {
+				sret = sret + "/* " + ss[0:idx] + "*/"
+			}
+			part, _ := javacodeutils.ReadStringLiteral(ss[idx:])
+			ipartend := len(part)
+			if part[ipartend-1] == '"' {
+				ipartend = ipartend - 1
+			}
+			formatedPart := part[1:ipartend]
+			formatedPart = strings.Replace(formatedPart, "\\\"", "\"", -1)
+
+			sret = sret + formatedPart
+			ss = ss[idx+len(part):]
 		}
 	}
 
