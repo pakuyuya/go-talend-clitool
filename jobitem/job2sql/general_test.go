@@ -4,24 +4,27 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	jobitem "../"
 )
 
 func TestTELTOutput2InsertSQL(t *testing.T) {
 
-	f, err := os.OpenFile("testdata/Test_0.1.item", os.O_RDONLY, 0444)
+	f, err := os.OpenFile("../testdata/Test_0.1.item", os.O_RDONLY, 0444)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	root, err := Parse(f)
+	root, err := jobitem.Parse(f)
 
-	links, _ := GetNodeLinks(root)
+	links, _ := jobitem.GetNodeLinks(root)
+	opt := Option{NoJavaCode: true}
 
 	for _, link := range links {
 		if link.Node.ComponentName == "tELTPostgresqlOutput" {
-			sql, _ := TELTOutput2InsertSQL(link)
+			sql, _ := TELTOutput2InsertSQL(link, &opt)
 
-			euname, _ := GetUniqueName(&link.Node)
+			euname, _ := jobitem.GetUniqueName(&link.Node)
 			fmt.Println(euname)
 			fmt.Println(sql)
 		}

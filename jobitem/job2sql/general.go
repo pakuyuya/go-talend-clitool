@@ -101,6 +101,9 @@ MAIN_LOOP:
 			if part[ipartend-1] == '"' {
 				ipartend = ipartend - 1
 			}
+			if ipartend < 1 {
+				ipartend = 1
+			}
 			formatedPart := part[1:ipartend]
 			formatedPart = strings.Replace(formatedPart, "\\\"", "\"", -1)
 
