@@ -61,6 +61,7 @@ func init() {
 
 	gensqlCmd.MarkFlagRequired("target")
 }
+
 func runapp() {
 	if !validateOptions() {
 		return

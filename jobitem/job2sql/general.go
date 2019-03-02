@@ -251,9 +251,12 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 	whereConds = append(whereConds, output.Filters...)
 
 	if len(whereConds) > 0 {
-		b.WriteString(" WHERE (")
-		b.WriteString(strings.Join(whereConds, ") AND ("))
-		b.WriteString(")")
+		b.WriteString(" WHERE ")
+		b.WriteString(strings.Join(whereConds, " AND "))
+	}
+	if len(output.OtherFilters) > 0 {
+		b.WriteRune(' ')
+		b.WriteString(strings.Join(output.OtherFilters, " "))
 	}
 
 	return b.String(), nil
@@ -284,11 +287,12 @@ func tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
 
 // TableInfo is struct table information analyzed from talend job item file.
 type TableInfo struct {
-	TableName string
-	Alias     string
-	JoinType  string
-	Columns   []ColumnInfo
-	Filters   []string
+	TableName    string
+	Alias        string
+	JoinType     string
+	Columns      []ColumnInfo
+	Filters      []string
+	OtherFilters []string
 }
 
 // ColumnInfo is struct table information analyzed from talend job item file.
@@ -355,10 +359,16 @@ func getOutputTable(tmapNode *Node, outputname string) (*TableInfo, error) {
 		table.Columns = columns
 
 		filters := make([]string, 0)
+		otherFilters := make([]string, 0)
 		for _, filter := range tagtable.FilterEntries {
-			filters = append(filters, filter.Expression)
+			if filter.FilterKind == "OTHER_FILTER" {
+				otherFilters = append(otherFilters, filter.Expression)
+			} else {
+				filters = append(filters, filter.Expression)
+			}
 		}
 		table.Filters = filters
+		table.OtherFilters = otherFilters
 
 		return &table, nil
 	}

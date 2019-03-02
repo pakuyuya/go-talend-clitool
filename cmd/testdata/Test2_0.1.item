@@ -163,6 +163,10 @@
       <OutputTables name="table1" tableName="customer">
         <DBMapperTableEntries name="custid" expression="customer.custid "/>
         <DBMapperTableEntries name="custname" expression="customer2.custname "/>
+        <FilterEntries name="newFilter1" expression="custid>10"/>
+        <FilterEntries name="newFilter2" expression="castid&lt;100"/>
+        <FilterEntries name="newFilter3" expression="GROUP BY customer.custid, customer2.custname" filterKind="OTHER_FILTER"/>
+        <FilterEntries name="newFilter4" expression="ORDER BY custid, custname" filterKind="OTHER_FILTER"/>
       </OutputTables>
     </nodeData>
   </node>
