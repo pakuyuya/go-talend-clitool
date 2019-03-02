@@ -177,6 +177,8 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 		}
 		firstcol = false
 		b.WriteString(strings.Trim(col.Expression, " "))
+		b.WriteString(" AS ")
+		b.WriteString(TakeRightObj(col.Name))
 	}
 
 	b.WriteString(" FROM ")
@@ -209,10 +211,10 @@ func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error)
 			if !firsttable {
 				b.WriteRune(',')
 			}
-			b.WriteString(fromItem + " " + alias + " ")
+			b.WriteString(fromItem + " " + TakeRightObj(alias) + " ")
 		} else {
 			// append `join`` phrase
-			b.WriteString(joinType2join(input.JoinType) + " " + fromItem + " " + alias)
+			b.WriteString(joinType2join(input.JoinType) + " " + fromItem + " " + TakeRightObj(alias))
 
 			// make `on` phrase
 			b.WriteString(" ON (")
