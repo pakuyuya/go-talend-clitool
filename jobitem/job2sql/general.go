@@ -9,6 +9,7 @@ import (
 	javacodeutils "../../util/javacodeutils"
 )
 
+// Option is context settings.
 type Option struct {
 	NoJavaCode bool
 }
@@ -153,13 +154,15 @@ func TELTOutput2InsertSQL(nodeLink *NodeLinkInfo, opt *Option) (string, error) {
 	}
 
 	if selectQuery == "" {
-		return "", errors.New("This ELTOutput has no input.")
+		msg := "This ELTOutput has no input."
+		return "", errors.New(msg)
 	}
 	b.WriteString(" " + selectQuery)
 
 	return b.String(), nil
 }
 
+// ELTMap2SelectSQL is function that conver Talend ELTMap... tag to SELECT sentence
 func ELTMap2SelectSQL(nodeLink *NodeLinkInfo, outputName string) (string, error) {
 	// TODO: will return SELECT
 	var b bytes.Buffer
@@ -279,6 +282,7 @@ func tELTInput2FromItemSQL(nodeLink *NodeLinkInfo) (string, error) {
 	return b.String(), nil
 }
 
+// TableInfo is struct table information analyzed from talend job item file.
 type TableInfo struct {
 	TableName string
 	Alias     string
@@ -286,6 +290,8 @@ type TableInfo struct {
 	Columns   []ColumnInfo
 	Filters   []string
 }
+
+// ColumnInfo is struct table information analyzed from talend job item file.
 type ColumnInfo struct {
 	Table      *TableInfo
 	Name       string

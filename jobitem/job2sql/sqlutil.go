@@ -11,9 +11,8 @@ func TakeRightObj(s string) string {
 	i := strings.LastIndex(s, ".")
 	if i >= 0 {
 		return s[i+1:]
-	} else {
-		return s
 	}
+	return s
 }
 
 // QuoteObjname is function that gives quotation to object names.
@@ -73,12 +72,12 @@ func QuoteObjname(s string) string {
 	return b.String()
 }
 
+// QuoteLikelyObjname is function that convert quoted object name only likely object name string
 func QuoteLikelyObjname(s string) string {
 	if IsLikelyObjname(s) {
 		return QuoteObjname(s)
-	} else {
-		return s
 	}
+	return s
 }
 
 // IsLikelyObjname is function judge whether a string is in a formatted like an object name,
@@ -131,12 +130,11 @@ func IsLikelyObjname(s string) bool {
 				return func() { next = quoteState() }
 			}
 			if c == '.' {
-				if !rejectOnNextDot {
-					return func() { next = noQuoteDotState() }
-				} else {
+				if rejectOnNextDot {
 					valid = false
 					return nil
 				}
+				return func() { next = noQuoteDotState() }
 			}
 			if isOperator(c) {
 				valid = false
