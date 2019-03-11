@@ -14,7 +14,7 @@ func ReadStringLiteral(s string) (string, error) {
 		r := runes[i]
 		if !escape {
 			if r == '"' {
-				return s[0 : i+1], nil
+				return string(runes[0 : i+1]), nil
 			}
 		}
 		escape = !escape && r == '\\'
